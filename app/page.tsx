@@ -1,9 +1,10 @@
-import Login from "./login/login";
+import Home from "./home/page";
+
 
 export default function Page() {
   return (
     <main className="min-h-screen bg-gray-100">
-      <Login />
+      <Home></Home>
     </main>
   );
 }
