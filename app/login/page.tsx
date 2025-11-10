@@ -9,7 +9,6 @@ export default function Login() {
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
       {/* ======== Parte Esquerda (Formulário) ======== */}
       <div className="flex-1 flex flex-col justify-center items-center bg-white px-6 py-10 md:px-12">
-        {/* Logo + Nome do Sistema */}
         <div className="flex items-center space-x-3 mb-8">
           <Image
             src="/logo.svg"
@@ -46,8 +45,6 @@ export default function Login() {
             Sou Beneficiário
           </button>
         </div>
-
-        {/* Mensagem de Boas-vindas */}
         <h2 className="text-2xl font-semibold text-gray-800 mb-3 text-center">
           Bem-vindo de volta
         </h2>
