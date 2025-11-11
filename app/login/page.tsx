@@ -1,9 +1,22 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [tipoUsuario, setTipoUsuario] = useState("doador");
+  const router = useRouter();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Redireciona de acordo com o tipo de usuário
+    if (tipoUsuario === "beneficiario") {
+      router.push("/doacoes");
+    } else {
+      router.push("/painel-doador");
+    }
+  };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
@@ -45,6 +58,7 @@ export default function Login() {
             Sou Beneficiário
           </button>
         </div>
+
         <h2 className="text-2xl font-semibold text-gray-800 mb-3 text-center">
           Bem-vindo de volta
         </h2>
@@ -53,13 +67,14 @@ export default function Login() {
         </p>
 
         {/* Formulário */}
-        <form className="w-full max-w-sm space-y-4">
+        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
           <div>
             <label className="block text-gray-700 font-medium mb-1 text-sm md:text-base">
               E-mail
             </label>
             <input
               type="email"
+              required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00B37E] text-sm md:text-base"
               placeholder="seu@email.com"
             />
@@ -70,6 +85,7 @@ export default function Login() {
             </label>
             <input
               type="password"
+              required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00B37E] text-sm md:text-base"
               placeholder="Digite sua senha"
             />
