@@ -9,7 +9,7 @@ interface Props {
   validade: string;
   distancia: string;
   urgente?: boolean;
-  imagem: string; // 🆕 Nova propriedade
+  imagem: string;
 }
 
 export default function DonationCard({
@@ -24,7 +24,6 @@ export default function DonationCard({
 }: Props) {
   return (
     <div className="border rounded-xl overflow-hidden shadow-sm bg-white flex flex-col justify-between hover:shadow-md transition">
-      {/* ======= Imagem da doação ======= */}
       <div className="relative w-full h-40">
         <Image
           src={imagem}
@@ -34,8 +33,6 @@ export default function DonationCard({
           sizes="(max-width: 768px) 100vw, 33vw"
         />
       </div>
-
-      {/* ======= Informações ======= */}
       <div className="p-4 flex flex-col justify-between flex-1">
         <div>
           <div className="flex items-center gap-2 mb-2">
