@@ -1,9 +1,8 @@
 import DonationCard from "../components/DonationCard";
 import FilterBar from "../components/FilterBar";
 import SearchBar from "../components/SearchBar";
-import Sidebar from "../components/Sidebar";
-import Topbar from "../components/Topbar";
-
+import Sidebar from "../components/SideBar";
+import Topbar from "../components/TopBar";
 
 export default function DoacoesPage() {
   const doacoes = [
@@ -15,6 +14,7 @@ export default function DoacoesPage() {
       validade: "Hoje às 20h",
       distancia: "1.2 km",
       urgente: true,
+      imagem: "/paes-e-bolos.jpg",
     },
     {
       nome: "Legumes frescos variados",
@@ -23,6 +23,7 @@ export default function DoacoesPage() {
       quantidade: "15kg",
       validade: "04/10/2025",
       distancia: "2.8 km",
+      imagem: "/cesta-dos-vegetais.jpg",
     },
     {
       nome: "Frutas frescas sortidas",
@@ -31,6 +32,7 @@ export default function DoacoesPage() {
       quantidade: "10kg",
       validade: "03/10/2025",
       distancia: "3.5 km",
+      imagem: "/frutas.jpg",
     },
   ];
 
