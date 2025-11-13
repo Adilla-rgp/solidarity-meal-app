@@ -1,5 +1,6 @@
 "use client";
-import { Home, Package, User, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Home, Package, User, LogOut, ChartColumnBig } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -7,13 +8,21 @@ import { usePathname } from "next/navigation";
 export default function Sidebar() {
   const pathname = usePathname();
 
+  //adicionando o tipo de usuario
+  const [tipoUsuario, setTipoUsuario] = useState<string | null>(null);
+
+  //o useeffect vai ler ppo tipo de usuario para carregar o componente
+  useEffect(() => {
+    const tipo = localStorage.getItem("tipoUsuario");
+    setTipoUsuario(tipo);
+  }, []);
+
   const linkClasses = (path: string) => {
     const isActive = pathname === path;
-    return `flex items-center gap-3 px-6 py-3 rounded-md font-medium transition ${
-      isActive
-        ? "bg-green-600 text-white"
-        : "text-gray-700 hover:bg-green-50 hover:text-green-700"
-    }`;
+    return `flex items-center gap-3 px-6 py-3 rounded-md font-medium transition ${isActive
+      ? "bg-green-600 text-white"
+      : "text-gray-700 hover:bg-green-50 hover:text-green-700"
+      }`;
   };
 
   return (
@@ -34,26 +43,47 @@ export default function Sidebar() {
         </div>
 
         <nav className="mt-4 flex flex-col gap-1">
-          <Link href="/doacoes" className={linkClasses("/doacoes")}>
-            <Home size={18} /> Encontrar Doações
-          </Link>
+          {tipoUsuario === "beneficiario" ? (
+            <>
+              <Link href="/doacoes" className={linkClasses("/doacoes")}>
+                <Home size={18} /> Encontrar Doações
+              </Link>
 
-          <Link href="/reservas" className={linkClasses("/reservas")}>
-            <Package size={18} /> Minhas Reservas
-          </Link>
+              <Link href="/reservas" className={linkClasses("/reservas")}>
+                <Package size={18} /> Minhas Reservas
+              </Link>
 
-          <Link href="/perfil" className={linkClasses("/perfil")}>
-            <User size={18} /> Meu Perfil
-          </Link>
+              <Link href="/perfil" className={linkClasses("/perfil")}>
+                <User size={18} /> Meu Perfil
+              </Link>
+            </>
+          ) : tipoUsuario === "doador" ? (
+            <>
+              <Link href="/doador/dashboard" className={linkClasses("/doador/dashboard")}>
+                <ChartColumnBig size={18} /> DashBoard
+              </Link>
+              <Link href="/doador/nova_doacao" className={linkClasses("/doador/nova_doacao")}>
+                <Package size={18} /> Nova Doação
+              </Link>
+              <Link href="/doador/perfil" className={linkClasses("/doador/perfil")}>
+                <User size={18} /> Meu Perfil
+              </Link>
+            </>
+          ) : (
+            <p className="text-gray-400 text-sm px-6">Carregando...</p>
+          )}
         </nav>
       </div>
 
       <Link
         href="/login"
+        onClick={() => localStorage.removeItem("tipoUsuario")}
         className="flex items-center gap-2 text-red-500 px-6 py-3 font-medium hover:bg-red-50 transition"
       >
+
         <LogOut size={18} /> Sair
       </Link>
+
     </aside>
   );
 }
