@@ -1,10 +1,10 @@
-import CallToAction from "../components/CallToAction";
-import ComoFunciona from "../components/ComoFunciona";
-import Depoimentos from "../components/Depoimentos";
-import Footer from "../components/Footer";
-import Header from "../components/Header";
-import Hero from "../components/Hero";
-import Impacto from "../components/Impacto";
+import CallToAction from "../components/callToAction";
+import ComoFunciona from "../components/comoFunciona";
+import Depoimentos from "../components/depoimentos";
+import Footer from "../components/footer";
+import Header from "../components/header";
+import Hero from "../components/hero";
+import Impacto from "../components/impacto";
 
 
 export default function Home() {
