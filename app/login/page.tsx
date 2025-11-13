@@ -10,11 +10,14 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // guarda o tipo de usuario localmente para mudar as páginas
+    localStorage.setItem("tipoUsuario", tipoUsuario);
+
     // Redireciona de acordo com o tipo de usuário
     if (tipoUsuario === "beneficiario") {
       router.push("/doacoes");
     } else {
-      router.push("/painel-doador");
+      router.push("/doador/dashboard");
     }
   };
 
@@ -39,21 +42,19 @@ export default function Login() {
         <div className="flex space-x-3 mb-8 bg-gray-100 rounded-2xl p-1">
           <button
             onClick={() => setTipoUsuario("doador")}
-            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${
-              tipoUsuario === "doador"
-                ? "bg-[#00B37E] text-white shadow-md"
-                : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
-            }`}
+            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${tipoUsuario === "doador"
+              ? "bg-[#00B37E] text-white shadow-md"
+              : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
+              }`}
           >
             Sou Doador
           </button>
           <button
             onClick={() => setTipoUsuario("beneficiario")}
-            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${
-              tipoUsuario === "beneficiario"
-                ? "bg-[#00B37E] text-white shadow-md"
-                : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
-            }`}
+            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${tipoUsuario === "beneficiario"
+              ? "bg-[#00B37E] text-white shadow-md"
+              : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
+              }`}
           >
             Sou Beneficiário
           </button>
