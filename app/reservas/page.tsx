@@ -1,6 +1,6 @@
 "use client";
-import Sidebar from "../components/SideBar";
-import Topbar from "../components/TopBar";
+import Sidebar from "../components/Sidebar";
+import Topbar from "../components/Topbar";
 import ReservaCard from "../components/ReservaCard";
 
 const reservas = [

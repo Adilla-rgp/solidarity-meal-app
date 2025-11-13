@@ -1,6 +1,6 @@
 "use client";
 
-import Sidebar from "../components/SideBar";
+import Sidebar from "../components/Sidebar";
 import Image from "next/image";
 
 export default function PerfilPage() {
@@ -72,11 +72,10 @@ export default function PerfilPage() {
                     <td className="py-2 px-3">{item.nome}</td>
                     <td className="py-2 px-3">{item.data}</td>
                     <td
-                      className={`py-2 px-3 font-medium ${
-                        item.status === "Entregue"
-                          ? "text-green-600"
-                          : "text-yellow-600"
-                      }`}
+                      className={`py-2 px-3 font-medium ${item.status === "Entregue"
+                        ? "text-green-600"
+                        : "text-yellow-600"
+                        }`}
                     >
                       {item.status}
                     </td>
