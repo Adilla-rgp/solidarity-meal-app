@@ -1,8 +1,8 @@
 import DonationCard from "../components/DonationCard";
 import FilterBar from "../components/FilterBar";
 import SearchBar from "../components/SearchBar";
-import Sidebar from "../components/SideBar";
-import Topbar from "../components/TopBar";
+import Sidebar from "../components/Sidebar";
+import Topbar from "../components/Topbar";
 
 export default function DoacoesPage() {
   const doacoes = [
