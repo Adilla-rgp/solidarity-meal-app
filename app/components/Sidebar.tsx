@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Home, Package, User, LogOut, ChartColumnBig } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -8,21 +8,18 @@ import { usePathname } from "next/navigation";
 export default function Sidebar() {
   const pathname = usePathname();
 
-  //adicionando o tipo de usuario
-  const [tipoUsuario, setTipoUsuario] = useState<string | null>(null);
-
-  //o useeffect vai ler ppo tipo de usuario para carregar o componente
-  useEffect(() => {
-    const tipo = localStorage.getItem("tipoUsuario");
-    setTipoUsuario(tipo);
-  }, []);
+  // Inicializa direto com o valor do localStorage
+  const [tipoUsuario] = useState<string | null>(
+    () => (typeof window !== "undefined" ? localStorage.getItem("tipoUsuario") : null)
+  );
 
   const linkClasses = (path: string) => {
     const isActive = pathname === path;
-    return `flex items-center gap-3 px-6 py-3 rounded-md font-medium transition ${isActive
-      ? "bg-green-600 text-white"
-      : "text-gray-700 hover:bg-green-50 hover:text-green-700"
-      }`;
+    return `flex items-center gap-3 px-6 py-3 rounded-md font-medium transition ${
+      isActive
+        ? "bg-green-600 text-white"
+        : "text-gray-700 hover:bg-green-50 hover:text-green-700"
+    }`;
   };
 
   return (
@@ -59,13 +56,22 @@ export default function Sidebar() {
             </>
           ) : tipoUsuario === "doador" ? (
             <>
-              <Link href="/doador/dashboard" className={linkClasses("/doador/dashboard")}>
+              <Link
+                href="/doador/dashboard"
+                className={linkClasses("/doador/dashboard")}
+              >
                 <ChartColumnBig size={18} /> DashBoard
               </Link>
-              <Link href="/doador/nova_doacao" className={linkClasses("/doador/nova_doacao")}>
+              <Link
+                href="/doador/nova_doacao"
+                className={linkClasses("/doador/nova_doacao")}
+              >
                 <Package size={18} /> Nova Doação
               </Link>
-              <Link href="/doador/perfil" className={linkClasses("/doador/perfil")}>
+              <Link
+                href="/doador/perfil"
+                className={linkClasses("/doador/perfil")}
+              >
                 <User size={18} /> Meu Perfil
               </Link>
             </>
@@ -80,10 +86,8 @@ export default function Sidebar() {
         onClick={() => localStorage.removeItem("tipoUsuario")}
         className="flex items-center gap-2 text-red-500 px-6 py-3 font-medium hover:bg-red-50 transition"
       >
-
         <LogOut size={18} /> Sair
       </Link>
-
     </aside>
   );
 }
