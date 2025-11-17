@@ -25,6 +25,7 @@ interface BeneficiarioContextType {
     reservaId: string,
     status: "ativa" | "cancelada" | "concluida"
   ) => void;
+  cadastrarBeneficiario: (dados: Omit<Beneficiario, "id">) => void;
 }
 
 const BeneficiarioContext = createContext<BeneficiarioContextType | undefined>(
@@ -97,6 +98,15 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const cadastrarBeneficiario = (dados: Omit<Beneficiario, "id">) => {
+    const novoBeneficiario: Beneficiario = {
+      id: crypto.randomUUID(),
+      ...dados,
+    };
+    Beneficiario(novoBeneficiario);
+    localStorage.setItem("beneficiario", JSON.stringify(novoBeneficiario));
+  };
+
   return (
     <BeneficiarioContext.Provider
       value={{
@@ -105,6 +115,7 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
         adicionarReserva,
         removerReserva,
         atualizarStatusReserva,
+        cadastrarBeneficiario,
       }}
     >
       {children}
