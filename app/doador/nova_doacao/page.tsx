@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import FormInput from "@/app/components/FormInput";
 import FormSelect from "@/app/components/FormSelect";
 import FormTextArea from "@/app/components/FormTextArea";
 import FormDate from "@/app/components/FormDate";
+import { useDoador } from "@/app/contexts/DoadorContext";
 
 interface Option {
   value: string;
@@ -17,6 +18,7 @@ interface Option {
 
 export default function NovaDoacaoPage() {
   const router = useRouter();
+  const { adicionarDoacao, doador } = useDoador();
 
   const [formData, setFormData] = useState({
     tipo: "",
@@ -30,6 +32,14 @@ export default function NovaDoacaoPage() {
   const [tiposAlimento, setTiposAlimento] = useState<Option[]>([]);
   const [unidades, setUnidades] = useState<Option[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // redirecionar para cadastro (so se não tiver doador cadastrado)
+  useEffect(() => {
+    if (!doador) {
+      alert("Complete seu cadastro primeiro");
+      router.push("/doador/cadastro");
+    }
+  }, [doador, router]);
 
   // Buscar os mocks com tratamento de erro
   useEffect(() => {
@@ -59,24 +69,18 @@ export default function NovaDoacaoPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     try {
-      const res = await fetch("/api/mocks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error("Erro ao cadastrar doação");
-
+      adicionarDoacao(formData);
       alert("Doação cadastrada com sucesso!");
-      router.push("/doacoes"); // redireciona para a tela de doações
+      router.push("/doador/dashboard");
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Erro desconhecido ao cadastrar doação");
+        setError("Erro ao cadastrar doação");
       }
     }
   };
