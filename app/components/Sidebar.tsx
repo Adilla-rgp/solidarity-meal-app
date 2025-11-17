@@ -15,15 +15,14 @@ export default function Sidebar() {
 
   const linkClasses = (path: string) => {
     const isActive = pathname === path;
-    return `flex items-center gap-3 px-6 py-3 rounded-md font-medium transition ${
-      isActive
+    return `flex items-center gap-3 px-6 py-3 rounded-md font-medium transition ${isActive
         ? "bg-green-600 text-white"
         : "text-gray-700 hover:bg-green-50 hover:text-green-700"
-    }`;
+      }`;
   };
 
   return (
-    <aside className="w-64 h-screen bg-white border-r flex flex-col justify-between">
+    <aside className="w-64 min-h-screen bg-white border-r flex flex-col justify-between sticky top-0">
       <div>
         <div className="p-6 flex items-center gap-2">
           <div className="relative w-10 h-10">
