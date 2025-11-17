@@ -42,15 +42,15 @@ export default function Sidebar() {
         <nav className="mt-4 flex flex-col gap-1">
           {tipoUsuario === "beneficiario" ? (
             <>
-              <Link href="/doacoes" className={linkClasses("/doacoes")}>
+              <Link href="/beneficiario/doacoes" className={linkClasses("/doacoes")}>
                 <Home size={18} /> Encontrar Doações
               </Link>
 
-              <Link href="/reservas" className={linkClasses("/reservas")}>
+              <Link href="/beneficiario/reservas" className={linkClasses("/reservas")}>
                 <Package size={18} /> Minhas Reservas
               </Link>
 
-              <Link href="/perfil" className={linkClasses("/perfil")}>
+              <Link href="/beneficiario/perfil" className={linkClasses("/perfil")}>
                 <User size={18} /> Meu Perfil
               </Link>
             </>
