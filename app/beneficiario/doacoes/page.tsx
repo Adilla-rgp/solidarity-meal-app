@@ -1,12 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import DonationCard from "../../components/DonationCard";
 import FilterBar from "../../components/FilterBar";
 import SearchBar from "../../components/SearchBar";
 import Sidebar from "../../components/Sidebar";
 import Topbar from "../../components/Topbar";
+import { useBeneficiario } from "@/app/contexts/BeneficiarioContext";
 
 interface Doacao {
+  id: string;
   nome: string;
   doador: string;
   tipo: string;
@@ -15,29 +17,30 @@ interface Doacao {
   distancia: string;
   urgente?: boolean;
   imagem: string;
+  status: "ativa" | "reservada" | "entregue";
 }
 
 export default function DoacoesPage() {
-  const [doacoes, setDoacoes] = useState<Doacao[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [doacoes, setDoacoes] = useState<Doacao[]>(() => {
+    if (typeof window !== "undefined") {
+      const doacoesSave = localStorage.getItem("doacoes");
+      return doacoesSave ? JSON.parse(doacoesSave) : [];
+    }
+    return [];
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/mocks");
-        if (!res.ok) throw new Error("Erro ao carregar doações");
-        const data = await res.json();
-        setDoacoes(data.doacoes as Doacao[]);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Erro desconhecido");
-        }
-      }
-    };
-    fetchData();
-  }, []);
+  const { adicionarReserva } = useBeneficiario();
+
+  const handleReservar = (doacaoId: string) => {
+  adicionarReserva({ doacaoId });
+
+  const atualizadas = doacoes.map((d) =>
+    d.id === doacaoId ? { ...d, status: "reservada" as const } : d
+  );
+
+  setDoacoes(atualizadas);
+  localStorage.setItem("doacoes", JSON.stringify(atualizadas));
+};
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
@@ -47,20 +50,18 @@ export default function DoacoesPage() {
         <SearchBar />
         <FilterBar />
 
-        {error ? (
-          <p className="text-red-600 mt-6">{error}</p>
-        ) : (
-          <>
-            <p className="text-gray-500 mt-6">
-              {doacoes.length} doações disponíveis
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-4">
-              {doacoes.map((item, index) => (
-                <DonationCard key={index} {...item} />
-              ))}
-            </div>
-          </>
-        )}
+        <p className="text-gray-500 mt-6">
+          {doacoes.length} doações disponíveis
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-4">
+          {doacoes.map((item) => (
+            <DonationCard
+              key={item.id}
+              {...item}
+              onReservar={() => handleReservar(item.id)}
+            />
+          ))}
+        </div>
       </main>
     </div>
   );
