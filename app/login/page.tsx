@@ -123,7 +123,7 @@ export default function Login() {
             <input
               type="password"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00B37E] text-sm md:text-base"
+              className="w-full px-4 py-2 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00B37E] text-sm md:text-base"
               placeholder="Digite sua senha"
             />
           </div>
@@ -131,7 +131,7 @@ export default function Login() {
           <div className="flex justify-between items-center text-sm">
             <label className="flex items-center space-x-2">
               <input type="checkbox" className="accent-[#00B37E]" />
-              <span>Lembrar de mim</span>
+              <span className="text-black">Lembrar de mim</span>
             </label>
             <a href="#" className="text-[#00B37E] hover:underline">
               Esqueceu a senha?
