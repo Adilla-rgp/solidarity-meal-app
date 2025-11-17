@@ -18,6 +18,7 @@ interface Doacao {
   urgente?: boolean;
   imagem: string;
   status: "ativa" | "reservada" | "entregue";
+  descricao?: string;
 }
 
 export default function DoacoesPage() {
@@ -29,18 +30,28 @@ export default function DoacoesPage() {
     return [];
   });
 
+  const [searchQuery, setSearchQuery] = useState("");
   const { adicionarReserva } = useBeneficiario();
 
   const handleReservar = (doacaoId: string) => {
-  adicionarReserva({ doacaoId });
+    adicionarReserva({ doacaoId });
 
-  const atualizadas = doacoes.map((d) =>
-    d.id === doacaoId ? { ...d, status: "reservada" as const } : d
-  );
+    const atualizadas = doacoes.map((d) =>
+      d.id === doacaoId ? { ...d, status: "reservada" as const } : d
+    );
 
-  setDoacoes(atualizadas);
-  localStorage.setItem("doacoes", JSON.stringify(atualizadas));
-};
+    setDoacoes(atualizadas);
+    localStorage.setItem("doacoes", JSON.stringify(atualizadas));
+  };
+
+  const doacoesFiltradas = doacoes.filter((doacao) => {
+    const termo = searchQuery.toLowerCase();
+    return (
+      doacao.nome.toLowerCase().includes(termo) ||
+      doacao.tipo.toLowerCase().includes(termo) ||
+      doacao.doador.toLowerCase().includes(termo)
+    );
+  });
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
