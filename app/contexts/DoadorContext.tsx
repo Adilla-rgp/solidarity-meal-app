@@ -9,6 +9,8 @@ interface Doacao {
   quantidade: string;
   unidade: string;
   validade: string;
+  descricao: string;
+  imagem?: string;
   data: string;
   status: "ativa" | "reservada" | "entregue";
 }
@@ -17,6 +19,9 @@ interface Doador {
   id: string;
   estabelecimento: string;
   email: string;
+  nome?: string;
+  telefone?: string;
+  localizacao?: string;
 }
 
 interface DoadorContextType {
@@ -27,12 +32,13 @@ interface DoadorContextType {
     doacaoId: string,
     status: "ativa" | "reservada" | "entregue"
   ) => void;
+  cadastrarDoador: (dados: Omit<Doador, "id">) => void;
 }
 
 const DoadorContext = createContext<DoadorContextType | undefined>(undefined);
 
 export function DoadorProvider({ children }: { children: ReactNode }) {
-  // evitar setState em useEffect
+
   const [doador] = useState<Doador | null>(() => {
     if (typeof window !== "undefined") {
       const doadorSave = localStorage.getItem("doador");
@@ -72,9 +78,17 @@ export function DoadorProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("doacoes", JSON.stringify(atualizadas));
   };
 
+  const cadastrarDoador = (dados: Omit<Doador, "id">) => {
+    const novoDoador: Doador = {
+      id: crypto.randomUUID(),
+      ...dados,
+    };
+    localStorage.setItem("doador", JSON.stringify(novoDoador));
+  };
+
   return (
     <DoadorContext.Provider
-      value={{ doador, doacoes, adicionarDoacao, atualizarStatusDoacao }}
+      value={{ doador, doacoes, adicionarDoacao, atualizarStatusDoacao, cadastrarDoador }}
     >
       {children}
     </DoadorContext.Provider>
