@@ -4,20 +4,54 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
-  const [tipoUsuario, setTipoUsuario] = useState("doador");
+  const [tipoUsuario, setTipoUsuario] = useState<"doador" | "beneficiario">(() => {
+    if (typeof window !== "undefined") {
+      const tipoSalvo = localStorage.getItem("tipoUsuario") as "doador" | "beneficiario" | null;
+      return tipoSalvo ?? "doador";
+    }
+    return "doador";
+  });
+
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // guarda o tipo de usuario localmente para mudar as páginas
     localStorage.setItem("tipoUsuario", tipoUsuario);
 
-    // Redireciona de acordo com o tipo de usuário
-    if (tipoUsuario === "beneficiario") {
-      router.push("/doacoes");
-    } else {
+    if (tipoUsuario === "doador") {
+      const doadorSave = localStorage.getItem("doador");
+      let doadorData = null;
+
+      try {
+        doadorData = doadorSave ? JSON.parse(doadorSave) : null;
+      } catch {
+        doadorData = null;
+      }
+
+      // valida se os campos obrigatórios existem
+      if (!doadorData || !doadorData.nome || !doadorData.email) {
+        router.push("/doador/cadastro");
+        return;
+      }
+
       router.push("/doador/dashboard");
+    } else {
+      const beneficiarioSave = localStorage.getItem("beneficiario");
+      let beneficiarioData = null;
+
+      try {
+        beneficiarioData = beneficiarioSave ? JSON.parse(beneficiarioSave) : null;
+      } catch {
+        beneficiarioData = null;
+      }
+
+      if (!beneficiarioData || !beneficiarioData.nome || !beneficiarioData.email) {
+        router.push("/beneficiario/cadastro");
+        return;
+      }
+
+      router.push("/beneficiario/doacoes");
     }
   };
 
@@ -42,19 +76,21 @@ export default function Login() {
         <div className="flex space-x-3 mb-8 bg-gray-100 rounded-2xl p-1">
           <button
             onClick={() => setTipoUsuario("doador")}
-            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${tipoUsuario === "doador"
-              ? "bg-[#00B37E] text-white shadow-md"
-              : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
-              }`}
+            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${
+              tipoUsuario === "doador"
+                ? "bg-[#00B37E] text-white shadow-md"
+                : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
+            }`}
           >
             Sou Doador
           </button>
           <button
             onClick={() => setTipoUsuario("beneficiario")}
-            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${tipoUsuario === "beneficiario"
-              ? "bg-[#00B37E] text-white shadow-md"
-              : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
-              }`}
+            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${
+              tipoUsuario === "beneficiario"
+                ? "bg-[#00B37E] text-white shadow-md"
+                : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
+            }`}
           >
             Sou Beneficiário
           </button>
@@ -111,9 +147,21 @@ export default function Login() {
 
           <p className="text-center text-sm text-gray-600">
             Ainda não tem uma conta?{" "}
-            <a href="/doador/cadastro" className="text-[#00B37E] font-semibold hover:underline">
-              Cadastre-se
-            </a>
+            {tipoUsuario === "beneficiario" ? (
+              <a
+                href="/beneficiario/cadastro"
+                className="text-[#00B37E] font-semibold hover:underline"
+              >
+                Cadastre-se
+              </a>
+            ) : (
+              <a
+                href="/doador/cadastro"
+                className="text-[#00B37E] font-semibold hover:underline"
+              >
+                Cadastre-se
+              </a>
+            )}
           </p>
         </form>
       </div>
