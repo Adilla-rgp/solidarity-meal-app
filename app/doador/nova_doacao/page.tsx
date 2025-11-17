@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
@@ -27,8 +27,10 @@ export default function NovaDoacaoPage() {
     unidade: "",
     validade: "",
     descricao: "",
+    imagem: "",
   });
 
+  const [previaImagem, setPreviaImagem] = useState<string>("");
   const [tiposAlimento, setTiposAlimento] = useState<Option[]>([]);
   const [unidades, setUnidades] = useState<Option[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -67,6 +69,19 @@ export default function NovaDoacaoPage() {
     >
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setFormData((s) => ({ ...s, imagem: result }));
+      setPreviaImagem(result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -173,6 +188,37 @@ export default function NovaDoacaoPage() {
               onChange={handleChange}
               linhas={5}
             />
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Foto da Doação</label>
+
+              <div className="flex items-center gap-4">
+                <div className="flex-1 relative border-2 border-dashed border-green-300 rounded-lg p-6 hover:bg-green-50 transition cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+
+                  <div className="flex flex-col items-center justify-center pointer-events-none">
+                    <Upload size={32} className="text-green-600 mb-2" />
+                    <p className="text-gray-700 font-medium">Clique ou arraste a imagem</p>
+                    <p className="text-gray-500 text-sm">PNG, JPG, GIF até 5MB</p>
+                  </div>
+
+                </div>
+                {previaImagem && (
+                  <div className="w-32 h-32 rounded-lg overflow-hidden border border-gray-200">
+                    <img
+                      src={previaImagem}
+                      alt="previa"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div className="flex gap-4 mt-8">
               <button
