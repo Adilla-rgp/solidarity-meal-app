@@ -11,12 +11,19 @@ export default function CadastroBeneficiarioPage() {
     const router = useRouter();
     const { cadastrarBeneficiario } = useBeneficiario();
 
+    
     const [formData, setFormData] = useState({
         nome: "",
         telefone: "",
         email: "",
         endereco: "",
         necessidade: "",
+    });
+    
+    cadastrarBeneficiario({
+        nome: formData.nome,
+        email: formData.email,
+        endereco: formData.endereco,
     });
 
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
