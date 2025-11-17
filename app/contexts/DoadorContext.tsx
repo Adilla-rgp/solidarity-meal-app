@@ -1,110 +1,80 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
-interface Doador {
-  nome: string;
-  telefone: string;
-  email: string;
-  estabelecimento: string;
-  localizacao: string;
-}
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface Doacao {
   id: string;
-  tipo: string;
   nome: string;
+  tipo: string;
   quantidade: string;
   unidade: string;
   validade: string;
-  descricao: string;
   data: string;
   status: "ativa" | "reservada" | "entregue";
+}
+
+interface Doador {
+  id: string;
+  estabelecimento: string;
+  email: string;
 }
 
 interface DoadorContextType {
   doador: Doador | null;
   doacoes: Doacao[];
-  cadastrarDoador: (dados: Doador) => void;
-  adicionarDoacao: (doacao: Omit<Doacao, "id" | "data" | "status">) => void;
-  atualizarStatusDoacao: (id: string, status: Doacao["status"]) => void;
-  removerDoacao: (id: string) => void;
+  adicionarDoacao: (doacao: Omit<Doacao, "id" | "status" | "data">) => void;
+  atualizarStatusDoacao: (
+    doacaoId: string,
+    status: "ativa" | "reservada" | "entregue"
+  ) => void;
 }
 
 const DoadorContext = createContext<DoadorContextType | undefined>(undefined);
 
 export function DoadorProvider({ children }: { children: ReactNode }) {
-  const [doador, setDoador] = useState<Doador | null>(null);
-  const [doacoes, setDoacoes] = useState<Doacao[]>([]);
-
-  useEffect(() => {
+  // evitar setState em useEffect
+  const [doador] = useState<Doador | null>(() => {
     if (typeof window !== "undefined") {
       const doadorSave = localStorage.getItem("doador");
+      return doadorSave ? JSON.parse(doadorSave) : null;
+    }
+    return null;
+  });
+
+  const [doacoes, setDoacoes] = useState<Doacao[]>(() => {
+    if (typeof window !== "undefined") {
       const doacoesSave = localStorage.getItem("doacoes");
-
-      if (doadorSave) {
-        setDoador(JSON.parse(doadorSave));
-      }
-
-      if (doacoesSave) {
-        setDoacoes(JSON.parse(doacoesSave));
-      }
+      return doacoesSave ? JSON.parse(doacoesSave) : [];
     }
-  }, []);
+    return [];
+  });
 
-  const cadastrarDoador = (dados: Doador) => {
-    setDoador(dados);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("doador", JSON.stringify(dados));
-    }
-  };
-
-  const adicionarDoacao = (doacao: Omit<Doacao, "id" | "data" | "status">) => {
-    const novaDoacao: Doacao = {
-      ...doacao,
-      id: Date.now().toString(),
-      data: new Date().toLocaleDateString("pt-BR"),
+  const adicionarDoacao = (novaDoacao: Omit<Doacao, "id" | "status" | "data">) => {
+    const doacao: Doacao = {
+      id: crypto.randomUUID(),
+      ...novaDoacao,
       status: "ativa",
+      data: new Date().toLocaleDateString("pt-BR"),
     };
-
-    const novasDoacoes = [...doacoes, novaDoacao];
-    setDoacoes(novasDoacoes);
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("doacoes", JSON.stringify(novasDoacoes));
-    }
+    const atualizadas = [...doacoes, doacao];
+    setDoacoes(atualizadas);
+    localStorage.setItem("doacoes", JSON.stringify(atualizadas));
   };
 
-  const atualizarStatusDoacao = (id: string, status: Doacao["status"]) => {
-    const doacoesAtualizadas = doacoes.map((doacao) =>
-      doacao.id === id ? { ...doacao, status } : doacao
+  const atualizarStatusDoacao = (
+    doacaoId: string,
+    status: "ativa" | "reservada" | "entregue"
+  ) => {
+    const atualizadas = doacoes.map((d) =>
+      d.id === doacaoId ? { ...d, status } : d
     );
-    setDoacoes(doacoesAtualizadas);
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("doacoes", JSON.stringify(doacoesAtualizadas));
-    }
-  };
-
-  const removerDoacao = (id: string) => {
-    const doacoesFiltradas = doacoes.filter((doacao) => doacao.id !== id);
-    setDoacoes(doacoesFiltradas);
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("doacoes", JSON.stringify(doacoesFiltradas));
-    }
+    setDoacoes(atualizadas);
+    localStorage.setItem("doacoes", JSON.stringify(atualizadas));
   };
 
   return (
     <DoadorContext.Provider
-      value={{
-        doador,
-        doacoes,
-        cadastrarDoador,
-        adicionarDoacao,
-        atualizarStatusDoacao,
-        removerDoacao,
-      }}
+      value={{ doador, doacoes, adicionarDoacao, atualizarStatusDoacao }}
     >
       {children}
     </DoadorContext.Provider>
