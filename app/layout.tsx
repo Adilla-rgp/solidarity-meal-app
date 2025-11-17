@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/app/globals.css";
-import { DoadorProvider } from "@/app/contexts/DoadorContext"
+import { DoadorProvider } from "@/app/contexts/DoadorContext";
+import { BeneficiarioProvider } from "@/app/contexts/BeneficiarioContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,10 +29,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Envolvemos toda a aplicação com os dois Providers */}
         <DoadorProvider>
-          {children}
+          <BeneficiarioProvider>
+            {children}
+          </BeneficiarioProvider>
         </DoadorProvider>
       </body>
     </html>
   );
-}
+} 
