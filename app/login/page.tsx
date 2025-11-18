@@ -233,11 +233,13 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 bg-white/70 p-6 md:p-10 rounded-2xl text-center max-w-md m-4 shadow-md">
-          <h2 className="text-[#00B37E] text-lg md:text-2xl font-bold mb-3">
-            Juntos contra o desperdício
-          </h2>
-          <p className="text-gray-700 text-xs md:text-sm leading-relaxed">
-            Mais de <strong>234 parceiros</strong> já fazem parte da nossa rede
+        <h2 className="text-[#00B37E] text-lg md:text-2xl font-bold mb-3">
+          Juntos contra o desperdício
+        </h2>
+        <p className="text-gray-700 text-xs md:text-sm leading-relaxed">
+          Mais de <strong>234 parceiros</strong> já fazem parte da nossa rede
+          </p>
         </div>
-      </div>
-}
+     </div>
+   </div>
+)} 
