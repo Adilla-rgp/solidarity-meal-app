@@ -30,7 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Envolvemos toda a aplicação com os dois Providers */}
+        {/* Envolvemos toda a aplicação com os três Providers */}
         <AuthProvider>
           <DoadorProvider>
             <BeneficiarioProvider>
