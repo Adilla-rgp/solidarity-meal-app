@@ -14,6 +14,8 @@ interface Beneficiario {
   nome: string;
   email: string;
   endereco: string;
+  telefone?: string;
+  necessidade?: string;
 }
 
 interface BeneficiarioContextType {
@@ -26,6 +28,7 @@ interface BeneficiarioContextType {
     status: "ativa" | "cancelada" | "concluida"
   ) => void;
   cadastrarBeneficiario: (dados: Omit<Beneficiario, "id">) => void;
+  carregarBeneficiario: (email: string) => void;
 }
 
 const BeneficiarioContext = createContext<BeneficiarioContextType | undefined>(
@@ -35,7 +38,7 @@ const BeneficiarioContext = createContext<BeneficiarioContextType | undefined>(
 export function BeneficiarioProvider({ children }: { children: ReactNode }) {
   const [beneficiario, setBeneficiario] = useState<Beneficiario | null>(() => {
     if (typeof window !== "undefined") {
-      const beneficiarioSave = localStorage.getItem("beneficiario");
+      const beneficiarioSave = localStorage.getItem("beneficiarioAtual");
       return beneficiarioSave ? JSON.parse(beneficiarioSave) : null;
     }
     return null;
@@ -48,6 +51,23 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
     }
     return [];
   });
+
+  const carregarBeneficiario = (email: string) => {
+    if (typeof window !== "undefined") {
+      const beneficiarios = localStorage.getItem("beneficiarios");
+      if (beneficiarios) {
+        const listaBeneficiarios: Beneficiario[] = JSON.parse(beneficiarios);
+        const beneficiarioEncontrado = listaBeneficiarios.find(
+          b => b.email.toLowerCase() === email.toLowerCase()
+        );
+
+        if (beneficiarioEncontrado) {
+          setBeneficiario(beneficiarioEncontrado);
+          localStorage.setItem("beneficiarioAtual", JSON.stringify(beneficiarioEncontrado));
+        }
+      }
+    }
+  };
 
   const adicionarReserva = ({ doacaoId }: { doacaoId: string }) => {
     const novaReserva: Reserva = {
@@ -62,8 +82,8 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
 
     // Atualização do status da doação para "reservada"
     const doacoes: Doacao[] = JSON.parse(localStorage.getItem("doacoes") || "[]");
-    const doacoesAtualizadas = doacoes.map((d) =>
-      d.id === doacaoId ? { ...d, status: "reservada" as const } : d
+    const doacoesAtualizadas = doacoes.map((d: any) =>
+      d.id === doacaoId ? { ...d, status: "reservada" } : d
     );
     localStorage.setItem("doacoes", JSON.stringify(doacoesAtualizadas));
   };
@@ -98,12 +118,33 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
   };
 
   const cadastrarBeneficiario = (dados: Omit<Beneficiario, "id">) => {
+
+    const beneficiariosExistentes = localStorage.getItem("beneficiarios");
+    const listaBeneficiarios: Beneficiario[] = beneficiariosExistentes
+      ? JSON.parse(beneficiariosExistentes)
+      : [];
+
+
+    const indiceExistente = listaBeneficiarios.findIndex(
+      b => b.email.toLowerCase() === dados.email.toLowerCase()
+    );
+
     const novoBeneficiario: Beneficiario = {
-      id: crypto.randomUUID(),
+      id: indiceExistente >= 0 ? listaBeneficiarios[indiceExistente].id : crypto.randomUUID(),
       ...dados,
     };
+
+    if (indiceExistente >= 0) {
+      listaBeneficiarios[indiceExistente] = novoBeneficiario;
+    } else {
+      listaBeneficiarios.push(novoBeneficiario);
+    }
+
+    localStorage.setItem("beneficiarios", JSON.stringify(listaBeneficiarios));
+
+
     setBeneficiario(novoBeneficiario);
-    localStorage.setItem("beneficiario", JSON.stringify(novoBeneficiario));
+    localStorage.setItem("beneficiarioAtual", JSON.stringify(novoBeneficiario));
   };
 
   return (
@@ -115,6 +156,7 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
         removerReserva,
         atualizarStatusReserva,
         cadastrarBeneficiario,
+        carregarBeneficiario,
       }}
     >
       {children}

@@ -13,6 +13,7 @@ interface Doacao {
   imagem?: string;
   data: string;
   status: "ativa" | "reservada" | "entregue";
+  doadorEmail: string;
 }
 
 interface Doador {
@@ -27,19 +28,20 @@ interface Doador {
 interface DoadorContextType {
   doador: Doador | null;
   doacoes: Doacao[];
-  adicionarDoacao: (doacao: Omit<Doacao, "id" | "status" | "data">) => void;
+  adicionarDoacao: (doacao: Omit<Doacao, "id" | "status" | "data" | "doadorEmail">) => void;
   atualizarStatusDoacao: (
     doacaoId: string,
     status: "ativa" | "reservada" | "entregue"
   ) => void;
   cadastrarDoador: (dados: Omit<Doador, "id">) => void;
+  carregarDoador: (email: string) => void;
 }
 
 const DoadorContext = createContext<DoadorContextType | undefined>(undefined);
 
 export function DoadorProvider({ children }: { children: ReactNode }) {
 
-  const [doador] = useState<Doador | null>(() => {
+  const [doador, setDoador] = useState<Doador | null>(() => {
     if (typeof window !== "undefined") {
       const doadorSave = localStorage.getItem("doador");
       return doadorSave ? JSON.parse(doadorSave) : null;
@@ -55,44 +57,80 @@ export function DoadorProvider({ children }: { children: ReactNode }) {
     return [];
   });
 
-  const adicionarDoacao = (novaDoacao: Omit<Doacao, "id" | "status" | "data">) => {
+  const carregarDoador = (email: string) => {
+    if (typeof window !== "undefined") {
+
+      const doadores = localStorage.getItem("doadores");
+      if (doadores) {
+        const listaDoadores: Doador[] = JSON.parse(doadores);
+        const doadorEncontrado = listaDoadores.find(d => d.email.toLowerCase() === email.toLowerCase());
+
+        if (doadorEncontrado) {
+          setDoador(doadorEncontrado);
+          localStorage.setItem("doadorAtual", JSON.stringify(doadorEncontrado));
+        }
+      }
+    }
+  };
+
+
+  const adicionarDoacao = (novaDoacao: Omit<Doacao, "id" | "status" | "data" | "doadorEmail">) => {
     const doacao: Doacao = {
       id: crypto.randomUUID(),
       ...novaDoacao,
       status: "ativa",
       data: new Date().toLocaleDateString("pt-BR"),
+      doadorEmail: doador?.email || "",
     };
-    const atualizadas = [...doacoes, doacao];
-    setDoacoes(atualizadas);
-    localStorage.setItem("doacoes", JSON.stringify(atualizadas));
-  };
 
-  const atualizarStatusDoacao = (
-    doacaoId: string,
-    status: "ativa" | "reservada" | "entregue"
-  ) => {
-    const atualizadas = doacoes.map((d) =>
-      d.id === doacaoId ? { ...d, status } : d
+    const atualizarStatusDoacao = (
+      doacaoId: string,
+      status: "ativa" | "reservada" | "entregue"
+    ) => {
+      const atualizadas = doacoes.map((d) =>
+        d.id === doacaoId ? { ...d, status } : d
+      );
+      setDoacoes(atualizadas);
+      localStorage.setItem("doacoes", JSON.stringify(atualizadas));
+    };
+
+    const cadastrarDoador = (dados: Omit<Doador, "id">) => {
+
+      const doadoresExistentes = localStorage.getItem("doadores");
+      const listaDoadores: Doador[] = doadoresExistentes
+        ? JSON.parse(doadoresExistentes)
+        : [];
+
+
+      const indiceExistente = listaDoadores.findIndex(
+        d => d.email.toLowerCase() === dados.email.toLowerCase()
+      );
+
+      const novoDoador: Doador = {
+        id: indiceExistente >= 0 ? listaDoadores[indiceExistente].id : crypto.randomUUID(),
+        ...dados,
+      };
+
+      if (indiceExistente >= 0) {
+        listaDoadores[indiceExistente] = novoDoador;
+      } else {
+        listaDoadores.push(novoDoador);
+      }
+
+      localStorage.setItem("doadores", JSON.stringify(listaDoadores));
+
+      setDoador(novoDoador);
+      localStorage.setItem("doadorAtual", JSON.stringify(novoDoador));
+    };
+
+    return (
+      <DoadorContext.Provider
+        value={{ doador, doacoes, adicionarDoacao, atualizarStatusDoacao, cadastrarDoador, carregarDoador }}
+      >
+        {children}
+      </DoadorContext.Provider>
     );
-    setDoacoes(atualizadas);
-    localStorage.setItem("doacoes", JSON.stringify(atualizadas));
-  };
-
-  const cadastrarDoador = (dados: Omit<Doador, "id">) => {
-    const novoDoador: Doador = {
-      id: crypto.randomUUID(),
-      ...dados,
-    };
-    localStorage.setItem("doador", JSON.stringify(novoDoador));
-  };
-
-  return (
-    <DoadorContext.Provider
-      value={{ doador, doacoes, adicionarDoacao, atualizarStatusDoacao, cadastrarDoador }}
-    >
-      {children}
-    </DoadorContext.Provider>
-  );
+  }
 }
 
 export function useDoador() {
