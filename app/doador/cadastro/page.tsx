@@ -13,6 +13,7 @@ export default function CadastroDoadorPage() {
 
     const [formData, setFormData] = useState({
         nome: "",
+        senha: "", 
         telefone: "",
         email: "",
         estabelecimento: "",
@@ -34,6 +35,9 @@ export default function CadastroDoadorPage() {
 
         if (!formData.nome.trim()) {
             newErrors.nome = "Nome é obrigatório";
+        }
+        if(!formData.senha.trim()) {
+            newErrors.senha = "Senha é obrigatória"; 
         }
 
         if (!formData.telefone.trim()) {
@@ -112,6 +116,19 @@ export default function CadastroDoadorPage() {
                     />
 
                     {errors.nome && (<p className="text-red-500 text-sm -mt-4">{errors.nome}</p>)}
+
+                    <FormInput
+                    label="Senha"
+                    nome="senha"
+                    tipo="password"
+                    placeholder="Digite sua senha"
+                    requerido
+                    valor={formData.senha}
+                    onChange={handleChange}
+                    />
+                    
+                    {errors.senha && (<p className="text-red-500 text-sm -mt-4">{errors.senha}</p>)}
+
 
                     <FormInput
                         label="Telefone"
