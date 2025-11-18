@@ -15,9 +15,12 @@ export default function ReservaCard({ imagem, titulo, data, status }: ReservaCar
     cancelada: "bg-red-100 text-red-800",
   };
 
+  const imagemSrc = imagem && imagem.trim() !== ""
+    ? imagem
+    : "./public/placeholder.jpg";
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition">
-      <Image src={imagem} alt={titulo} width={400} height={250} className="w-full h-48 object-cover" />
+      <Image src={imagemSrc} alt={titulo} width={400} height={250} className="w-full h-48 object-cover" />
       <div className="p-4">
         <h3 className="text-lg font-semibold text-gray-800">{titulo}</h3>
         <p className="text-sm text-gray-500">Data: {data}</p>

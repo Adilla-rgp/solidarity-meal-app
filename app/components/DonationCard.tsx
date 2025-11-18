@@ -16,11 +16,16 @@ interface DonationCardProps {
 }
 
 export default function DonationCard(props: DonationCardProps) {
+
+  const imagemSrc = props.imagem && props.imagem.trim() !== ""
+    ? props.imagem
+    : "/public/placeholder.png";
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col">
       <div className="relative w-full h-40 mb-4">
         <Image
-          src={props.imagem}
+          src={imagemSrc}
           alt={props.nome}
           fill
           className="object-cover rounded-lg"

@@ -33,8 +33,7 @@ const BeneficiarioContext = createContext<BeneficiarioContextType | undefined>(
 );
 
 export function BeneficiarioProvider({ children }: { children: ReactNode }) {
-  // evitando setState em useEffect
-  const [beneficiario] = useState<Beneficiario | null>(() => {
+  const [beneficiario, setBeneficiario] = useState<Beneficiario | null>(() => {
     if (typeof window !== "undefined") {
       const beneficiarioSave = localStorage.getItem("beneficiario");
       return beneficiarioSave ? JSON.parse(beneficiarioSave) : null;
@@ -103,7 +102,7 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
       id: crypto.randomUUID(),
       ...dados,
     };
-    Beneficiario(novoBeneficiario);
+    setBeneficiario(novoBeneficiario);
     localStorage.setItem("beneficiario", JSON.stringify(novoBeneficiario));
   };
 
