@@ -1,111 +1,60 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState } from "react";
 
-interface Usuario {
-    id: string;
-    email: string;
-    senha: string;
-    tipo: "doador" | "beneficiario";
+type TipoUsuario = "doador" | "beneficiario";
+
+interface AuthData {
+  email: string;
+  tipo: TipoUsuario;
+  logado: boolean;
 }
 
 interface AuthContextType {
-    usuarioLogado: Usuario | null;
-    login: (email: string, senha: string, tipo: "doador" | "beneficiario") => boolean;
-    logout: () => void;
-    registrar: (email: string, senha: string, tipo: "doador" | "beneficiario") => boolean;
-    usuarioExiste: (email: string) => boolean;
+  auth: AuthData | null;
+  login: (email: string, senha: string, tipo: TipoUsuario) => boolean;
+  logout: () => void;
+  loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-    const [usuarioLogado, setUsuarioLogado] = useState<Usuario | null>(() => {
-        if (typeof window !== "undefined") {
-            const userSave = localStorage.getItem("usuarioLogado");
-            return userSave ? JSON.parse(userSave) : null;
-        }
-        return null;
-    });
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [auth, setAuth] = useState<AuthData | null>(() => {
+    if (typeof window === "undefined") return null;
 
-    const getUsuarios = (): Usuario[] => {
-        if (typeof window !== "undefined") {
-            const usuarios = localStorage.getItem("usuarios");
-            return usuarios ? JSON.parse(usuarios) : [];
-        }
-        return [];
+    const authSalvo = localStorage.getItem("auth");
+    return authSalvo ? JSON.parse(authSalvo) : null;
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  function login(email: string, senha: string, tipo: TipoUsuario) {
+    if (!email || !senha) return false;
+
+    const authData: AuthData = {
+      email,
+      tipo,
+      logado: true,
     };
 
-    const salvarUsuarios = (usuarios: Usuario[]) => {
-        localStorage.setItem("usuarios", JSON.stringify(usuarios));
-    };
+    localStorage.setItem("auth", JSON.stringify(authData));
+    setAuth(authData);
+    return true;
+  }
 
+  function logout() {
+    localStorage.removeItem("auth");
+    setAuth(null);
+  }
 
-    const usuarioExiste = (email: string): boolean => {
-        const usuarios = getUsuarios();
-        return usuarios.some(u => u.email.toLowerCase() === email.toLowerCase());
-    };
-
-    const registrar = (email: string, senha: string, tipo: "doador" | "beneficiario"): boolean => {
-        if (usuarioExiste(email)) {
-            return false;
-        }
-
-        const usuarios = getUsuarios();
-        const novoUsuario: Usuario = {
-            id: crypto.randomUUID(),
-            email: email.toLowerCase(),
-            senha,
-            tipo,
-        };
-
-        usuarios.push(novoUsuario);
-        salvarUsuarios(usuarios);
-        return true;
-    };
-
-    const login = (email: string, senha: string, tipo: "doador" | "beneficiario"): boolean => {
-        const usuarios = getUsuarios();
-        const usuario = usuarios.find(
-            u => u.email.toLowerCase() === email.toLowerCase() &&
-                u.senha === senha &&
-                u.tipo === tipo
-        );
-
-        if (usuario) {
-            setUsuarioLogado(usuario);
-            localStorage.setItem("usuarioLogado", JSON.stringify(usuario));
-            localStorage.setItem("tipoUsuario", tipo);
-            return true;
-        }
-        return false;
-    };
-
-    const logout = () => {
-        setUsuarioLogado(null);
-        localStorage.removeItem("usuarioLogado");
-        localStorage.removeItem("tipoUsuario");
-    };
-
-    return (
-        <AuthContext.Provider
-            value={{
-                usuarioLogado,
-                login,
-                logout,
-                registrar,
-                usuarioExiste,
-            }}
-        >
-            {children}
-        </AuthContext.Provider>
-    );
+  return (
+    <AuthContext.Provider value={{ auth, login, logout, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth deve ser usado dentro de AuthProvider");
-    }
-    return context;
+  return useContext(AuthContext);
 }
