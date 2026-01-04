@@ -28,8 +28,13 @@ interface Doador {
 interface DoadorContextType {
   doador: Doador | null;
   doacoes: Doacao[];
-  adicionarDoacao: (doacao: Omit<Doacao, "id" | "status" | "data" | "doadorEmail">) => void;
-  atualizarStatusDoacao: (doacaoId: string, status: "ativa" | "reservada" | "entregue") => void;
+  adicionarDoacao: (
+    doacao: Omit<Doacao, "id" | "status" | "data" | "doadorEmail">
+  ) => void;
+  atualizarStatusDoacao: (
+    doacaoId: string,
+    status: "ativa" | "reservada" | "entregue"
+  ) => void;
   cadastrarDoador: (dados: Omit<Doador, "id">) => void;
   carregarDoador: (email: string) => void;
 }
@@ -37,95 +42,62 @@ interface DoadorContextType {
 const DoadorContext = createContext<DoadorContextType | undefined>(undefined);
 
 export function DoadorProvider({ children }: { children: ReactNode }) {
-  const [doador, setDoador] = useState<Doador | null>(() => {
-    if (typeof window !== "undefined") {
-      const doadorSave = localStorage.getItem("doador");
-      return doadorSave ? JSON.parse(doadorSave) : null;
-    }
-    return null;
-  });
+  const [doador, setDoador] = useState<Doador | null>(null);
+  const [doacoes, setDoacoes] = useState<Doacao[]>([]);
 
-  const [doacoes, setDoacoes] = useState<Doacao[]>(() => {
-    if (typeof window !== "undefined") {
-      const doacoesSave = localStorage.getItem("doacoes");
-      return doacoesSave ? JSON.parse(doacoesSave) : [];
-    }
-    return [];
-  });
-
-  // 🔹 Funções do contexto
   const carregarDoador = (email: string) => {
-    if (typeof window !== "undefined") {
-      const doadores = localStorage.getItem("doadores");
-      if (doadores) {
-        const listaDoadores: Doador[] = JSON.parse(doadores);
-        const doadorEncontrado = listaDoadores.find(
-          (d) => d.email.toLowerCase() === email.toLowerCase()
-        );
+    const doadores = JSON.parse(localStorage.getItem("doadores") || "[]");
+    const encontrado = doadores.find(
+      (d: Doador) => d.email.toLowerCase() === email.toLowerCase()
+    );
 
-        if (doadorEncontrado) {
-          setDoador(doadorEncontrado);
-          localStorage.setItem("doadorAtual", JSON.stringify(doadorEncontrado));
-        }
-      }
+    if (encontrado) {
+      setDoador(encontrado);
+      setDoacoes(
+        JSON.parse(localStorage.getItem("doacoes") || "[]").filter(
+          (d: Doacao) => d.doadorEmail === email
+        )
+      );
     }
   };
 
   const adicionarDoacao = (
     novaDoacao: Omit<Doacao, "id" | "status" | "data" | "doadorEmail">
   ) => {
+    if (!doador) return;
+
     const doacao: Doacao = {
       id: crypto.randomUUID(),
       ...novaDoacao,
       status: "ativa",
       data: new Date().toLocaleDateString("pt-BR"),
-      doadorEmail: doador?.email || "",
+      doadorEmail: doador.email,
     };
 
-    const novasDoacoes = [...doacoes, doacao];
-    setDoacoes(novasDoacoes);
-    localStorage.setItem("doacoes", JSON.stringify(novasDoacoes));
+    const atualizadas = [...doacoes, doacao];
+    setDoacoes(atualizadas);
+    localStorage.setItem("doacoes", JSON.stringify(atualizadas));
   };
 
-  const atualizarStatusDoacao = (
-    doacaoId: string,
-    status: "ativa" | "reservada" | "entregue"
-  ) => {
+  const atualizarStatusDoacao = (id: string, status: Doacao["status"]) => {
     const atualizadas = doacoes.map((d) =>
-      d.id === doacaoId ? { ...d, status } : d
+      d.id === id ? { ...d, status } : d
     );
     setDoacoes(atualizadas);
     localStorage.setItem("doacoes", JSON.stringify(atualizadas));
   };
 
   const cadastrarDoador = (dados: Omit<Doador, "id">) => {
-    const doadoresExistentes = localStorage.getItem("doadores");
-    const listaDoadores: Doador[] = doadoresExistentes
-      ? JSON.parse(doadoresExistentes)
-      : [];
+    const lista = JSON.parse(localStorage.getItem("doadores") || "[]");
 
-    const indiceExistente = listaDoadores.findIndex(
-      (d) => d.email.toLowerCase() === dados.email.toLowerCase()
-    );
-
-    const novoDoador: Doador = {
-      id:
-        indiceExistente >= 0
-          ? listaDoadores[indiceExistente].id
-          : crypto.randomUUID(),
+    const novo: Doador = {
+      id: crypto.randomUUID(),
       ...dados,
     };
 
-    if (indiceExistente >= 0) {
-      listaDoadores[indiceExistente] = novoDoador;
-    } else {
-      listaDoadores.push(novoDoador);
-    }
-
-    localStorage.setItem("doadores", JSON.stringify(listaDoadores));
-
-    setDoador(novoDoador);
-    localStorage.setItem("doadorAtual", JSON.stringify(novoDoador));
+    lista.push(novo);
+    localStorage.setItem("doadores", JSON.stringify(lista));
+    setDoador(novo);
   };
 
   return (
@@ -145,9 +117,7 @@ export function DoadorProvider({ children }: { children: ReactNode }) {
 }
 
 export function useDoador() {
-  const context = useContext(DoadorContext);
-  if (!context) {
-    throw new Error("useDoador deve ser usado dentro de DoadorProvider");
-  }
-  return context;
+  const ctx = useContext(DoadorContext);
+  if (!ctx) throw new Error("useDoador fora do provider");
+  return ctx;
 }
