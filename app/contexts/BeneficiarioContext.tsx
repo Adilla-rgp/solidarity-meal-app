@@ -22,129 +22,75 @@ interface BeneficiarioContextType {
   beneficiario: Beneficiario | null;
   reservas: Reserva[];
   adicionarReserva: (reserva: { doacaoId: string }) => void;
-  removerReserva: (reservaId: string) => void;
+  removerReserva: (id: string) => void;
   atualizarStatusReserva: (
-    reservaId: string,
-    status: "ativa" | "cancelada" | "concluida"
+    id: string,
+    status: Reserva["status"]
   ) => void;
   cadastrarBeneficiario: (dados: Omit<Beneficiario, "id">) => void;
   carregarBeneficiario: (email: string) => void;
 }
 
-const BeneficiarioContext = createContext<BeneficiarioContextType | undefined>(
-  undefined
-);
+const BeneficiarioContext =
+  createContext<BeneficiarioContextType | undefined>(undefined);
 
 export function BeneficiarioProvider({ children }: { children: ReactNode }) {
-  const [beneficiario, setBeneficiario] = useState<Beneficiario | null>(() => {
-    if (typeof window !== "undefined") {
-      const beneficiarioSave = localStorage.getItem("beneficiarioAtual");
-      return beneficiarioSave ? JSON.parse(beneficiarioSave) : null;
-    }
-    return null;
-  });
-
-  const [reservas, setReservas] = useState<Reserva[]>(() => {
-    if (typeof window !== "undefined") {
-      const reservasSave = localStorage.getItem("reservas");
-      return reservasSave ? JSON.parse(reservasSave) : [];
-    }
-    return [];
-  });
+  const [beneficiario, setBeneficiario] = useState<Beneficiario | null>(null);
+  const [reservas, setReservas] = useState<Reserva[]>([]);
 
   const carregarBeneficiario = (email: string) => {
-    if (typeof window !== "undefined") {
-      const beneficiarios = localStorage.getItem("beneficiarios");
-      if (beneficiarios) {
-        const listaBeneficiarios: Beneficiario[] = JSON.parse(beneficiarios);
-        const beneficiarioEncontrado = listaBeneficiarios.find(
-          b => b.email.toLowerCase() === email.toLowerCase()
-        );
+    const lista = JSON.parse(localStorage.getItem("beneficiarios") || "[]");
+    const encontrado = lista.find(
+      (b: Beneficiario) => b.email.toLowerCase() === email.toLowerCase()
+    );
 
-        if (beneficiarioEncontrado) {
-          setBeneficiario(beneficiarioEncontrado);
-          localStorage.setItem("beneficiarioAtual", JSON.stringify(beneficiarioEncontrado));
-        }
-      }
+    if (encontrado) {
+      setBeneficiario(encontrado);
+      setReservas(JSON.parse(localStorage.getItem("reservas") || "[]"));
     }
   };
 
   const adicionarReserva = ({ doacaoId }: { doacaoId: string }) => {
-    const novaReserva: Reserva = {
+    const nova: Reserva = {
       id: crypto.randomUUID(),
       doacaoId,
       data: new Date().toLocaleDateString("pt-BR"),
       status: "ativa",
     };
-    const atualizadas = [...reservas, novaReserva];
+
+    const atualizadas = [...reservas, nova];
     setReservas(atualizadas);
     localStorage.setItem("reservas", JSON.stringify(atualizadas));
-
-    // Atualização do status da doação para "reservada"
-    const doacoes: Doacao[] = JSON.parse(localStorage.getItem("doacoes") || "[]");
-    const doacoesAtualizadas = doacoes.map((d: any) =>
-      d.id === doacaoId ? { ...d, status: "reservada" } : d
-    );
-    localStorage.setItem("doacoes", JSON.stringify(doacoesAtualizadas));
   };
 
-  const removerReserva = (reservaId: string) => {
-    const atualizadas = reservas.filter((r) => r.id !== reservaId);
+  const removerReserva = (id: string) => {
+    const atualizadas = reservas.filter((r) => r.id !== id);
     setReservas(atualizadas);
     localStorage.setItem("reservas", JSON.stringify(atualizadas));
   };
 
   const atualizarStatusReserva = (
-    reservaId: string,
-    status: "ativa" | "cancelada" | "concluida"
+    id: string,
+    status: Reserva["status"]
   ) => {
     const atualizadas = reservas.map((r) =>
-      r.id === reservaId ? { ...r, status } : r
+      r.id === id ? { ...r, status } : r
     );
     setReservas(atualizadas);
     localStorage.setItem("reservas", JSON.stringify(atualizadas));
-
-    // atualização da doação para entregue
-    if (status === "concluida") {
-      const reserva = reservas.find((r) => r.id === reservaId);
-      if (reserva) {
-        const doacoes: Doacao[] = JSON.parse(localStorage.getItem("doacoes") || "[]");
-        const doacoesAtualizadas = doacoes.map((d) =>
-          d.id === reserva.doacaoId ? { ...d, status: "entregue" as const } : d
-        );
-        localStorage.setItem("doacoes", JSON.stringify(doacoesAtualizadas));
-      }
-    }
   };
 
   const cadastrarBeneficiario = (dados: Omit<Beneficiario, "id">) => {
+    const lista = JSON.parse(localStorage.getItem("beneficiarios") || "[]");
 
-    const beneficiariosExistentes = localStorage.getItem("beneficiarios");
-    const listaBeneficiarios: Beneficiario[] = beneficiariosExistentes
-      ? JSON.parse(beneficiariosExistentes)
-      : [];
-
-
-    const indiceExistente = listaBeneficiarios.findIndex(
-      b => b.email.toLowerCase() === dados.email.toLowerCase()
-    );
-
-    const novoBeneficiario: Beneficiario = {
-      id: indiceExistente >= 0 ? listaBeneficiarios[indiceExistente].id : crypto.randomUUID(),
+    const novo: Beneficiario = {
+      id: crypto.randomUUID(),
       ...dados,
     };
 
-    if (indiceExistente >= 0) {
-      listaBeneficiarios[indiceExistente] = novoBeneficiario;
-    } else {
-      listaBeneficiarios.push(novoBeneficiario);
-    }
-
-    localStorage.setItem("beneficiarios", JSON.stringify(listaBeneficiarios));
-
-
-    setBeneficiario(novoBeneficiario);
-    localStorage.setItem("beneficiarioAtual", JSON.stringify(novoBeneficiario));
+    lista.push(novo);
+    localStorage.setItem("beneficiarios", JSON.stringify(lista));
+    setBeneficiario(novo);
   };
 
   return (
@@ -165,21 +111,7 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
 }
 
 export function useBeneficiario() {
-  const context = useContext(BeneficiarioContext);
-  if (!context) {
-    throw new Error("useBeneficiario deve ser usado dentro de BeneficiarioProvider");
-  }
-  return context;
-}
-
-// Tipagem para doações
-interface Doacao {
-  id: string;
-  nome: string;
-  tipo: string;
-  quantidade: string;
-  unidade: string;
-  validade: string;
-  data: string;
-  status: "ativa" | "reservada" | "entregue";
+  const ctx = useContext(BeneficiarioContext);
+  if (!ctx) throw new Error("useBeneficiario fora do provider");
+  return ctx;
 }
