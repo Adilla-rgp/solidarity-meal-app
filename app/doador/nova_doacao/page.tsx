@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/app/components/Sidebar";
 import FormInput from "@/app/components/FormInput";
 import FormSelect from "@/app/components/FormSelect";
 import FormTextArea from "@/app/components/FormTextArea";
@@ -102,8 +101,6 @@ export default function NovaDoacaoPage() {
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
-      <Sidebar />
-
       <main className="flex-1 p-8">
         {/* cabeçalho da página */}
         <div className="mb-8">

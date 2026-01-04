@@ -1,6 +1,5 @@
 "use client";
 
-import Sidebar from "@/app/components/Sidebar";
 import QuadroEstatistico from "@/app/components/QuadroEstatistico";
 import GraficoMensal from "@/app/components/GraficoMensal";
 import ItemDeDoacao from "@/app/components/ItemDeDoacao";
@@ -53,8 +52,6 @@ export default function DashboardDoadorPage() {
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
-      <Sidebar />
-
       <main className="flex-1 p-8">
         {/* header */}
         <div className="flex justify-between items-center mb-8">

@@ -1,6 +1,5 @@
 "use client";
 
-import Sidebar from "../../components/Sidebar";
 import Topbar from "../../components/Topbar";
 import ReservaCard from "../../components/ReservaCard";
 import { useBeneficiario } from "@/app/contexts/BeneficiarioContext";
@@ -42,7 +41,6 @@ export default function MinhasReservas() {
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
-      <Sidebar />
       <main className="flex-1 p-8">
         <Topbar />
         <h1 className="text-2xl font-semibold text-gray-800 mb-6">

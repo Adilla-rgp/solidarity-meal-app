@@ -3,7 +3,6 @@ import { useState } from "react";
 import DonationCard from "../../components/DonationCard";
 import FilterBar from "../../components/FilterBar";
 import SearchBar from "../../components/SearchBar";
-import Sidebar from "../../components/Sidebar";
 import Topbar from "../../components/Topbar";
 import { useBeneficiario } from "@/app/contexts/BeneficiarioContext";
 
@@ -55,7 +54,6 @@ export default function DoacoesPage() {
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
-      <Sidebar />
       <main className="flex-1 p-8">
         <Topbar />
         <SearchBar />

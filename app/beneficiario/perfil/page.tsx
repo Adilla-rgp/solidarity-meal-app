@@ -33,7 +33,6 @@ export default function PerfilBeneficiarioPage() {
   if (!beneficiario) {
     return (
       <div className="flex bg-gray-50 min-h-screen">
-        <Sidebar />
         <main className="flex-1 p-8">
           <p className="text-gray-500">Nenhum beneficiário cadastrado.</p>
         </main>
@@ -48,8 +47,6 @@ export default function PerfilBeneficiarioPage() {
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
-      <Sidebar />
-
       <main className="flex-1 p-8">
         {/* Cabeçalho do Perfil */}
         <section className="bg-white rounded-xl p-6 shadow-sm mt-6">

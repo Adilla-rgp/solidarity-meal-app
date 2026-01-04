@@ -1,7 +1,6 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Sidebar from "@/app/components/Sidebar";
 import Image from "next/image";
 import { useDoador } from "@/app/contexts/DoadorContext";
 import Link from "next/link";
@@ -10,7 +9,6 @@ export default function PerfilDoadorPage() {
   const router = useRouter();
   const { doador, doacoes } = useDoador();
 
-  // Redirecionar para cadastro se não tiver doador
   useEffect(() => {
     if (!doador) {
       alert("Complete seu cadastro primeiro!");
@@ -29,10 +27,8 @@ export default function PerfilDoadorPage() {
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
-      <Sidebar />
       <main className="flex-1 p-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Meu Perfil</h1>
-
         {/* card de informações do doador */}
         <section className="bg-white rounded-xl p-6 shadow-sm">
           <div className="flex items-start justify-between">
