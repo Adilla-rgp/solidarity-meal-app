@@ -1,245 +1,124 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/contexts/autenticacaoContext"
-import { useDoador } from "@/app/contexts/DoadorContext";
-import { useBeneficiario } from "@/app/contexts/BeneficiarioContext";
+import { useAuth } from "@/app/contexts/autenticacaoContext";
 
-export default function Login() {
-
+export default function LoginPage() {
   const router = useRouter();
-  const { login, usuarioExiste } = useAuth();
-  const { carregarDoador } = useDoador();
-  const { carregarBeneficiario } = useBeneficiario();
+  const { login } = useAuth();
 
-  const [tipoUsuario, setTipoUsuario] = useState<"doador" | "beneficiario">(() => {
-    if (typeof window !== "undefined") {
-      const tipoSalvo = localStorage.getItem("tipoUsuario") as "doador" | "beneficiario" | null;
-      return tipoSalvo ?? "doador";
-    }
-    return "doador";
-  });
-
+  const [tipoUsuario, setTipoUsuario] = useState<"doador" | "beneficiario">(
+    "doador"
+  );
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
-  const [lembrar, setLembrar] = useState(false);
 
-
-  const handleSubmit = (e: React.FormEvent) => {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
 
-    if (!email || !senha) {
-      setErro("Preencha todos os campos");
+    const sucesso = login(email, senha, tipoUsuario);
+
+    if (!sucesso) {
+      setErro("Email ou senha inválidos");
       return;
     }
 
-
-    const sucesso = login(email, senha, tipoUsuario);
-
-    if (sucesso) {
-      // Carregar dados do usuário nos contexts específicos
-      if (tipoUsuario === "doador") {
-        carregarDoador(email);
-        router.push("/doador/dashboard");
-      } else {
-        carregarBeneficiario(email);
-        router.push("/beneficiario/doacoes");
-      }
-    } else {
-      // Verificar se usuário existe mas senha está errada
-      if (usuarioExiste(email)) {
-        setErro("Senha incorreta");
-      } else {
-        setErro("Usuário não encontrado. Cadastre-se primeiro.");
-      }
-    }
-  };
-
-  // persist selected tipoUsuario and perform redirect/data load in an effect to avoid routing during render
-  useEffect(() => {
-    localStorage.setItem("tipoUsuario", tipoUsuario);
-
-    if (tipoUsuario === "doador") {
-      const doadorSave = localStorage.getItem("doador");
-      let doadorData = null;
-
-      try {
-        doadorData = doadorSave ? JSON.parse(doadorSave) : null;
-      } catch {
-        doadorData = null;
-      }
-
-      // valida se os campos obrigatórios existem
-      if (!doadorData || !doadorData.nome || !doadorData.email) {
-        router.push("/doador/cadastro");
-        return;
-      }
-
-      router.push("/doador/dashboard");
-    } else {
-      const beneficiarioSave = localStorage.getItem("beneficiario");
-      let beneficiarioData = null;
-
-      try {
-        beneficiarioData = beneficiarioSave ? JSON.parse(beneficiarioSave) : null;
-      } catch {
-        beneficiarioData = null;
-      }
-
-      if (!beneficiarioData || !beneficiarioData.nome || !beneficiarioData.email) {
-        router.push("/beneficiario/cadastro");
-        return;
-      }
-
-      router.push("/beneficiario/doacoes");
-    }
-  }, [tipoUsuario, router, carregarDoador, carregarBeneficiario]);
+    router.push(
+      tipoUsuario === "doador"
+        ? "/doador/dashboard"
+        : "/beneficiario/doacoes"
+    );
+  }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
-      {/* ======== Parte Esquerda (Formulário) ======== */}
-      <div className="flex-1 flex flex-col justify-center items-center bg-white px-6 py-10 md:px-12">
-        <div className="flex items-center space-x-3 mb-8">
-          <Image
-            src="/logo.svg"
-            alt="Logo"
-            width={55}
-            height={55}
-            className="object-contain"
-          />
-          <h1 className="text-2xl md:text-3xl font-bold text-[#00B37E] text-center">
+    <div className="flex min-h-screen">
+      <div className="flex-1 flex flex-col justify-center items-center bg-white px-6">
+        <div className="flex items-center gap-3 mb-8">
+          <Image src="/logo.svg" alt="Logo" width={50} height={50} />
+          <h1 className="text-2xl font-bold text-[#00B37E]">
             Prato Solidário
           </h1>
         </div>
 
-        {/* Botões de tipo de usuário */}
-        <div className="flex space-x-3 mb-8 bg-gray-100 rounded-2xl p-1">
+        <div className="flex mb-6 bg-gray-100 p-1 rounded-xl">
           <button
-            onClick={() => {
-              setTipoUsuario("doador");
-              setErro("");
-            }}
-            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${tipoUsuario === "doador"
-              ? "bg-[#00B37E] text-white shadow-md"
-              : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
-              }`}
+            type="button"
+            onClick={() => setTipoUsuario("doador")}
+            className={`px-4 py-2 rounded-lg ${
+              tipoUsuario === "doador"
+                ? "bg-[#00B37E] text-white"
+                : "text-gray-600"
+            }`}
           >
             Sou Doador
           </button>
+
           <button
-            onClick={() => {
-              setTipoUsuario("beneficiario");
-              setErro("");
-            }}
-            className={`px-4 py-2 rounded-xl text-sm md:text-base font-medium transition-all duration-200 ${tipoUsuario === "beneficiario"
-              ? "bg-[#00B37E] text-white shadow-md"
-              : "bg-transparent text-gray-600 hover:bg-[#00B37E] hover:text-white"
-              }`}
+            type="button"
+            onClick={() => setTipoUsuario("beneficiario")}
+            className={`px-4 py-2 rounded-lg ${
+              tipoUsuario === "beneficiario"
+                ? "bg-[#00B37E] text-white"
+                : "text-gray-600"
+            }`}
           >
             Sou Beneficiário
           </button>
         </div>
 
-        <h2 className="text-2xl font-semibold text-gray-800 mb-3 text-center">
-          Bem-vindo de volta
-        </h2>
-        <p className="text-gray-500 text-sm md:text-base mb-6 text-center">
-          Entre na sua conta para continuar fazendo a diferença
-        </p>
-
         {erro && (
-          <div className="w-full max-w-sm mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{erro}</p>
-          </div>
+          <p className="mb-4 text-sm text-red-600 bg-red-50 px-4 py-2 rounded">
+            {erro}
+          </p>
         )}
 
-        {/* Formulário */}
-        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-          <div>
-            <label className="block text-gray-700 font-medium mb-1 text-sm md:text-base">
-              E-mail
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00B37E] text-sm md:text-base text-gray-800"
-              placeholder="seu@email.com"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 text-black placeholder:text-black">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border px-4 py-2 rounded"
+          />
 
-          <div>
-            <label className="block text-gray-700 font-medium mb-1 text-sm md:text-base">
-              Senha
-            </label>
-            <input
-              type="password"
-              required
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              className="w-full px-4 py-2 border text-gray-800 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00B37E] text-sm md:text-base"
-              placeholder="Digite sua senha"
-            />
-          </div>
-
-          <div className="flex justify-between items-center text-sm">
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={lembrar}
-                onChange={(e) => setLembrar(e.target.checked)}
-                className="accent-[#00B37E]"
-              />
-              <span className="text-gray-600">Lembrar de mim</span>
-            </label>
-            <a href="#" className="text-[#00B37E] hover:underline">
-              Esqueceu a senha?
-            </a>
-          </div>
+          <input
+            type="password"
+            placeholder="Senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            className="w-full border px-4 py-2 rounded"
+          />
 
           <button
             type="submit"
-            className="w-full bg-[#00B37E] text-white py-2 rounded-lg font-semibold hover:bg-[#00996D] transition text-sm md:text-base shadow-md"
+            className="w-full bg-[#00B37E] text-white py-2 rounded font-semibold"
           >
             Entrar
           </button>
-
-          <p className="text-center text-sm text-gray-600">
-            Ainda não tem uma conta?{" "}
-            <a
-              href={tipoUsuario === "beneficiario" ? "/beneficiario/cadastro" : "/doador/cadastro"}
-              className="text-[#00B37E] font-semibold hover:underline"
-            >
-              Cadastre-se
-            </a>
-          </p>
         </form>
+
+        <p className="mt-4 text-sm text-gray-600">
+          Não tem conta?{" "}
+          <a
+            href={
+              tipoUsuario === "doador"
+                ? "/doador/cadastro"
+                : "/beneficiario/cadastro"
+            }
+            className="text-[#00B37E] font-semibold"
+          >
+            Cadastre-se
+          </a>
+        </p>
       </div>
 
-      {/* ======== Parte Direita (Imagem e Slogan) ======== */}
-      <div className="relative flex-1 flex items-center justify-center bg-linear-to-b from-green-50 to-white">
-        <div className="absolute inset-0">
-          <Image
-            src="/login.svg"
-            alt="Imagem de fundo"
-            fill
-            className="object-cover opacity-90"
-            priority
-          />
-        </div>
-
-        <div className="relative z-10 bg-white/70 p-6 md:p-10 rounded-2xl text-center max-w-md m-4 shadow-md">
-        <h2 className="text-[#00B37E] text-lg md:text-2xl font-bold mb-3">
-          Juntos contra o desperdício
-        </h2>
-        <p className="text-gray-700 text-xs md:text-sm leading-relaxed">
-          Mais de <strong>234 parceiros</strong> já fazem parte da nossa rede
-          </p>
-        </div>
-     </div>
-   </div>
-)} 
+      <div className="hidden md:flex flex-1 items-center justify-center bg-green-50">
+        <Image src="/login.svg" alt="Ilustração" width={400} height={400} />
+      </div>
+    </div>
+  );
+}
