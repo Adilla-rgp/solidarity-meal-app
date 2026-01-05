@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 18, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/adill/estudos/solidarity-meal-app/app/home/page.tsx"],"sourcesContent":["\r\n\r\n\r\nexport default function Home() {\r\n  return (\r\n    <main className=\"flex flex-col min-h-screen bg-white\">\r\n      {/* Cabeçalho */}\r\n      <Header />\r\n\r\n      {/* Seção principal */}\r\n      <Hero />\r\n\r\n      {/* Como Funciona */}\r\n      <ComoFunciona />\r\n\r\n      {/* Impacto */}\r\n      <Impacto />\r\n\r\n      {/* Depoimentos */}\r\n      <Depoimentos />\r\n\r\n      {/* Chamada para ação */}\r\n      <CallToAction />\r\n\r\n      {/* Rodapé */}\r\n      <Footer />\r\n    </main>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;;AAGe,SAAS;IACtB,qBACE,sRAAC;QAAK,WAAU;;0BAEd,sRAAC;;;;;0BAGD,sRAAC;;;;;0BAGD,sRAAC;;;;;0BAGD,sRAAC;;;;;0BAGD,sRAAC;;;;;0BAGD,sRAAC;;;;;0BAGD,sRAAC;;;;;;;;;;;AAGP","debugId":null}},
+    {"offset": {"line": 74, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/adill/estudos/solidarity-meal-app/app/page.tsx"],"sourcesContent":["import Home from \"./home/page\";\r\n\r\n\r\nexport default function Page() {\r\n  return (\r\n    <main className=\"min-h-screen bg-gray-100\">\r\n      <Home></Home>\r\n    </main>\r\n  );\r\n}\r\n"],"names":[],"mappings":";;;;;AAAA;;;AAGe,SAAS;IACtB,qBACE,sRAAC;QAAK,WAAU;kBACd,cAAA,sRAAC,uKAAI;;;;;;;;;;AAGX","debugId":null}}]
+}
