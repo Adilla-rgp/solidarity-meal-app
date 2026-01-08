@@ -1,7 +1,0 @@
-(globalThis.TURBOPACK_CHUNK_LISTS || (globalThis.TURBOPACK_CHUNK_LISTS = [])).push({
-    script: typeof document === "object" ? document.currentScript : undefined,
-    chunks: [
-  "static/chunks/estudos_solidarity-meal-app_app_3a5520e5._.js"
-],
-    source: "dynamic"
-});
