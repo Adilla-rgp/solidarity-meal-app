@@ -14,17 +14,29 @@ export default function DoadorLayout({
   const pathname = usePathname();
 
   const semSidebar = pathname.includes("/doador/cadastro");
+  const isCadastroPage = pathname.includes("/doador/cadastro");
 
+  // Página de cadastro - SEM AuthGuard
+  if (isCadastroPage) {
+    return (
+      <DoadorProvider>
+        <div className="flex min-h-screen w-full">
+          <main className="flex-1 bg-gray-50">
+            <div className="p-6">{children}</div>
+          </main>
+        </div>
+      </DoadorProvider>
+    );
+  }
+
+  // Outras páginas do doador - COM AuthGuard
   return (
     <AuthGuard tipoPermitido="doador">
       <DoadorProvider>
         <div className="flex min-h-screen w-full">
           {!semSidebar && <Sidebar />}
-
           <main className="flex-1 bg-gray-50">
-            <div className="p-6">
-              {children}
-            </div>
+            <div className="p-6">{children}</div>
           </main>
         </div>
       </DoadorProvider>

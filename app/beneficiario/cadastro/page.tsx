@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useBeneficiario } from "@/app/contexts/BeneficiarioContext";
-import FormInput from "@/app/components/FormInput";
 import Image from "next/image";
 import Link from "next/link";
 
+import FormInput from "@/app/components/FormInput";
+import { authService } from "@/app/lib/api/auth.service";
+
 export default function CadastroBeneficiarioPage() {
     const router = useRouter();
-    const { cadastrarBeneficiario } = useBeneficiario();
-
+    const [loading, setLoading] = useState(false);
+    const [formError, setFormError] = useState("");
 
     const [formData, setFormData] = useState({
         nome: "",
@@ -37,24 +38,20 @@ export default function CadastroBeneficiarioPage() {
         if (!formData.nome.trim()) {
             newErrors.nome = "Nome é obrigatório";
         }
-        if (!formData.senha.trim()){
+        if (!formData.senha.trim()) {
             newErrors.senha = "Senha é obrigatória"; 
         }
-
         if (!formData.telefone.trim()) {
             newErrors.telefone = "Telefone é obrigatório";
         }
-
         if (!formData.email.trim()) {
             newErrors.email = "Email é obrigatório";
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = "Email inválido";
         }
-
         if (!formData.endereco.trim()) {
             newErrors.endereco = "Endereço é obrigatório";
         }
-
         if (!formData.necessidade.trim()) {
             newErrors.necessidade = "Necessidade é obrigatória";
         }
@@ -63,20 +60,39 @@ export default function CadastroBeneficiarioPage() {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setFormError("");
 
         if (!validateForm()) {
             return;
         }
 
+        setLoading(true);
+
         try {
-            cadastrarBeneficiario(formData);
-            alert("Cadastro realizado com sucesso!");
-            router.push("/beneficiario/doacoes");
+            const result = await authService.register({
+                username: formData.nome,
+                email: formData.email,
+                password: formData.senha,
+            });
+
+            if (!result.success) {
+                setFormError(result.error || "Erro ao criar conta");
+                setLoading(false);
+                return;
+            }
+
+            alert("Cadastro realizado com sucesso! Faça login para continuar.");
+            
+            // Redirecionar para login (NÃO para doacoes)
+            router.push("/login");
+            
         } catch (error) {
-            console.error(error);
-            alert("Erro ao realizar cadastro. Tente novamente.");
+            console.error("Erro no cadastro:", error);
+            setFormError("Erro ao realizar cadastro. Tente novamente.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -86,7 +102,6 @@ export default function CadastroBeneficiarioPage() {
                 {/* logo e título */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="flex items-center gap-3 mb-4">
-
                         <Image
                             src="/logo.svg"
                             alt="Logo"
@@ -94,19 +109,22 @@ export default function CadastroBeneficiarioPage() {
                             height={55}
                             className="object-contain"
                         />
-
                         <h1 className="text-2xl font-bold text-green-600">Prato Solidário</h1>
-
                     </div>
 
                     <h2 className="text-xl font-semibold text-gray-800">Cadastro de Beneficiário</h2>
-
                     <p className="text-gray-500 text-center mt-2">Preencha seus dados para receber doações:</p>
                 </div>
 
+                {/* mensagem de erro geral */}
+                {formError && (
+                    <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                        {formError}
+                    </div>
+                )}
+
                 {/* formulario */}
                 <form onSubmit={handleSubmit} className="space-y-6">
-
                     <FormInput
                         label="Nome Completo"
                         nome="nome"
@@ -114,20 +132,21 @@ export default function CadastroBeneficiarioPage() {
                         requerido
                         valor={formData.nome}
                         onChange={handleChange}
+                        disabled={loading}
                     />
                     {errors.nome && (<p className="text-red-500 text-sm -mt-4">{errors.nome}</p>)}
 
                     <FormInput
-                    label="Senha"
-                    nome="senha"
-                    tipo="password"
-                    placeholder="Digite sua senha"
-                    requerido
-                    valor={formData.senha}
-                    onChange={handleChange}
+                        label="Senha"
+                        nome="senha"
+                        tipo="password"
+                        placeholder="Digite sua senha"
+                        requerido
+                        valor={formData.senha}
+                        onChange={handleChange}
+                        disabled={loading}
                     />
                     {errors.senha && (<p className="text-red-500 text-sm -mt-4">{errors.senha}</p>)}
-
 
                     <FormInput
                         label="Telefone"
@@ -138,6 +157,7 @@ export default function CadastroBeneficiarioPage() {
                         valor={formData.telefone}
                         onChange={handleChange}
                         helpText="Formato: (DDD) 12345-6789"
+                        disabled={loading}
                     />
                     {errors.telefone && (<p className="text-red-500 text-sm -mt-4">{errors.telefone}</p>)}
 
@@ -149,6 +169,7 @@ export default function CadastroBeneficiarioPage() {
                         requerido
                         valor={formData.email}
                         onChange={handleChange}
+                        disabled={loading}
                     />
                     {errors.email && (<p className="text-red-500 text-sm -mt-4">{errors.email}</p>)}
 
@@ -159,6 +180,7 @@ export default function CadastroBeneficiarioPage() {
                         requerido
                         valor={formData.endereco}
                         onChange={handleChange}
+                        disabled={loading}
                     />
                     {errors.endereco && (<p className="text-red-500 text-sm -mt-4">{errors.endereco}</p>)}
 
@@ -169,16 +191,24 @@ export default function CadastroBeneficiarioPage() {
                         requerido
                         valor={formData.necessidade}
                         onChange={handleChange}
+                        disabled={loading}
                     />
                     {errors.necessidade && (<p className="text-red-500 text-sm -mt-4">{errors.necessidade}</p>)}
 
                     {/* botões */}
                     <div className="flex gap-4 pt-4">
-                        <button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition shadow-md">
-                            Cadastrar
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? "Cadastrando..." : "Cadastrar"}
                         </button>
 
-                        <Link href="/login" className="flex-1 border border-gray-300 hover:bg-gray-50 py-3 rounded-lg font-semibold text-gray-700 text-center transition">
+                        <Link 
+                            href="/login" 
+                            className="flex-1 border border-gray-300 hover:bg-gray-50 py-3 rounded-lg font-semibold text-gray-700 text-center transition"
+                        >
                             Cancelar
                         </Link>
                     </div>

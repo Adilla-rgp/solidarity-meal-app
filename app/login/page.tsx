@@ -7,20 +7,18 @@ import { useAuth } from "@/app/contexts/autenticacaoContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loading } = useAuth();
 
-  const [tipoUsuario, setTipoUsuario] = useState<"doador" | "beneficiario">(
-    "doador"
-  );
+  const [tipoUsuario, setTipoUsuario] = useState<"doador" | "beneficiario">("doador");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro("");
 
-    const sucesso = login(email, senha, tipoUsuario);
+    const sucesso = await login(email, senha, tipoUsuario);
 
     if (!sucesso) {
       setErro("Email ou senha inválidos");
@@ -94,6 +92,8 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full border px-4 py-2 rounded"
+            required
+            disabled={loading}
           />
 
           <input
@@ -102,13 +102,16 @@ export default function LoginPage() {
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             className="w-full border px-4 py-2 rounded"
+            required
+            disabled={loading}
           />
 
           <button
             type="submit"
-            className="w-full bg-[#00B37E] text-white py-2 rounded font-semibold"
+            disabled={loading}
+            className="w-full bg-[#00B37E] text-white py-2 rounded font-semibold disabled:opacity-50"
           >
-            Entrar
+            {loading ? "Entrando..." : "Entrar"}
           </button>
         </form>
 
@@ -116,7 +119,7 @@ export default function LoginPage() {
           Não tem conta?{" "}
           <span
             onClick={handleCadastro}
-            className="text-[#00B37E] font-semibold cursor-pointer"
+            className="text-[#00B37E] font-semibold cursor-pointer hover:underline"
           >
             Cadastre-se
           </span>

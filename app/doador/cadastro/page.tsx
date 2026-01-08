@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { useDoador } from "@/app/contexts/DoadorContext";
+
 import FormInput from "@/app/components/FormInput";
+import { authService } from "@/app/lib/api/auth.service";
 
 export default function CadastroDoadorPage() {
     const router = useRouter();
-    const { cadastrarDoador } = useDoador();
+    const [loading, setLoading] = useState(false);
+    const [formError, setFormError] = useState("");
 
     const [formData, setFormData] = useState({
         nome: "",
@@ -36,24 +38,20 @@ export default function CadastroDoadorPage() {
         if (!formData.nome.trim()) {
             newErrors.nome = "Nome é obrigatório";
         }
-        if(!formData.senha.trim()) {
+        if (!formData.senha.trim()) {
             newErrors.senha = "Senha é obrigatória"; 
         }
-
         if (!formData.telefone.trim()) {
             newErrors.telefone = "Telefone é obrigatório";
         }
-
         if (!formData.email.trim()) {
             newErrors.email = "Email é obrigatório";
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             newErrors.email = "Email inválido";
         }
-
         if (!formData.estabelecimento.trim()) {
             newErrors.estabelecimento = "Nome do estabelecimento é obrigatório";
         }
-
         if (!formData.localizacao.trim()) {
             newErrors.localizacao = "Localização é obrigatória";
         }
@@ -62,20 +60,40 @@ export default function CadastroDoadorPage() {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setFormError("");
 
         if (!validateForm()) {
             return;
         }
 
+        setLoading(true);
+
         try {
-            cadastrarDoador(formData);
-            alert("Cadastro realizado com sucesso!");
-            router.push("/doador/dashboard");
+            // Registrar no backend
+            const result = await authService.register({
+                username: formData.nome,
+                email: formData.email,
+                password: formData.senha,
+            });
+
+            if (!result.success) {
+                setFormError(result.error || "Erro ao criar conta");
+                setLoading(false);
+                return;
+            }
+
+            alert("Cadastro realizado com sucesso! Faça login para continuar.");
+            
+            // Redirecionar para login (NÃO para dashboard)
+            router.push("/login");
+            
         } catch (error) {
-            console.error(error);
-            alert("Erro ao realizar cadastro. Tente novamente.");
+            console.error("Erro no cadastro:", error);
+            setFormError("Erro ao realizar cadastro. Tente novamente.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -85,7 +103,6 @@ export default function CadastroDoadorPage() {
                 {/* logo e título */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="flex items-center gap-3 mb-4">
-
                         <Image
                             src="/logo.svg"
                             alt="Logo"
@@ -93,19 +110,22 @@ export default function CadastroDoadorPage() {
                             height={55}
                             className="object-contain"
                         />
-
                         <h1 className="text-2xl font-bold text-green-600">Prato Solidário</h1>
-
                     </div>
 
                     <h2 className="text-xl font-semibold text-gray-800">Cadastro de Doador</h2>
-
                     <p className="text-gray-500 text-center mt-2">Preencha seus dados:</p>
                 </div>
 
+                {/* mensagem de erro geral */}
+                {formError && (
+                    <div className="mb-6 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                        {formError}
+                    </div>
+                )}
+
                 {/* formulario */}
                 <form onSubmit={handleSubmit} className="space-y-6">
-
                     <FormInput
                         label="Nome Completo"
                         nome="nome"
@@ -113,22 +133,21 @@ export default function CadastroDoadorPage() {
                         requerido
                         valor={formData.nome}
                         onChange={handleChange}
+                        disabled={loading}
                     />
-
                     {errors.nome && (<p className="text-red-500 text-sm -mt-4">{errors.nome}</p>)}
 
                     <FormInput
-                    label="Senha"
-                    nome="senha"
-                    tipo="password"
-                    placeholder="Digite sua senha"
-                    requerido
-                    valor={formData.senha}
-                    onChange={handleChange}
+                        label="Senha"
+                        nome="senha"
+                        tipo="password"
+                        placeholder="Digite sua senha"
+                        requerido
+                        valor={formData.senha}
+                        onChange={handleChange}
+                        disabled={loading}
                     />
-                    
                     {errors.senha && (<p className="text-red-500 text-sm -mt-4">{errors.senha}</p>)}
-
 
                     <FormInput
                         label="Telefone"
@@ -139,8 +158,8 @@ export default function CadastroDoadorPage() {
                         valor={formData.telefone}
                         onChange={handleChange}
                         helpText="Formato: (DDD) 12345-6789"
+                        disabled={loading}
                     />
-
                     {errors.telefone && (<p className="text-red-500 text-sm -mt-4">{errors.telefone}</p>)}
 
                     <FormInput
@@ -151,8 +170,8 @@ export default function CadastroDoadorPage() {
                         requerido
                         valor={formData.email}
                         onChange={handleChange}
+                        disabled={loading}
                     />
-
                     {errors.email && (<p className="text-red-500 text-sm -mt-4">{errors.email}</p>)}
 
                     <FormInput
@@ -162,8 +181,8 @@ export default function CadastroDoadorPage() {
                         requerido
                         valor={formData.estabelecimento}
                         onChange={handleChange}
+                        disabled={loading}
                     />
-
                     {errors.estabelecimento && (<p className="text-red-500 text-sm -mt-4">{errors.estabelecimento}</p>)}
 
                     <FormInput
@@ -173,31 +192,36 @@ export default function CadastroDoadorPage() {
                         requerido
                         valor={formData.localizacao}
                         onChange={handleChange}
+                        disabled={loading}
                     />
                     {errors.localizacao && (<p className="text-red-500 text-sm -mt-4">{errors.localizacao}</p>)}
 
                     {/* botões */}
                     <div className="flex gap-4 pt-4">
-                        <button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition shadow-md">
-                            Cadastrar
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? "Cadastrando..." : "Cadastrar"}
                         </button>
 
-                        <Link href="/login" className="flex-1 border border-gray-300 hover:bg-gray-50 py-3 rounded-lg font-semibold text-gray-700 text-center transition">
+                        <Link 
+                            href="/login" 
+                            className="flex-1 border border-gray-300 hover:bg-gray-50 py-3 rounded-lg font-semibold text-gray-700 text-center transition"
+                        >
                             Cancelar
                         </Link>
                     </div>
-
                 </form>
 
                 {/* link para login */}
                 <p className="text-center text-sm text-gray-600 mt-6"> Já tem cadastro?{" "}
-
                     <Link href="/login" className="text-green-600 font-semibold hover:underline">
                         Faça login
                     </Link>
-
                 </p>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }

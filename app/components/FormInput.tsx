@@ -1,14 +1,15 @@
-//form inputs
+import { ChangeEvent } from "react";
 
-interface FormInputProps {
+export interface FormInputProps {
     label: string;
     nome: string;
     tipo?: string;
-    placeholder?: string;
+    placeholder: string;
     requerido?: boolean;
+    valor: string;
+    onChange: (e: ChangeEvent<HTMLInputElement>) => void;
     helpText?: string;
-    valor?: string;
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    disabled?: boolean; // Adicionar esta prop
 }
 
 export default function FormInput({
@@ -17,30 +18,33 @@ export default function FormInput({
     tipo = "text",
     placeholder,
     requerido = false,
-    helpText,
     valor,
     onChange,
+    helpText,
+    disabled = false, // Valor padrão
 }: FormInputProps) {
-
     return (
-        <div className="mb-6">
-
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-                {label} {requerido && <span className="text-red-500">*</span>}
+        <div className="space-y-1">
+            <label htmlFor={nome} className="block text-sm font-medium text-gray-700">
+                {label}
+                {requerido && <span className="text-red-500 ml-1">*</span>}
             </label>
-
+            
             <input
                 type={tipo}
+                id={nome}
                 name={nome}
                 value={valor}
                 onChange={onChange}
                 placeholder={placeholder}
                 required={requerido}
-                className="w-full px-4 py-2.5 border border-green-700 rounded-lg  text-gray-700"
+                disabled={disabled}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
             />
-
-            {helpText && <p className="mt-1 text-sm text-gray-700">{helpText}</p>}
-
-        </div >
+            
+            {helpText && (
+                <p className="text-xs text-gray-500 mt-1">{helpText}</p>
+            )}
+        </div>
     );
 }
