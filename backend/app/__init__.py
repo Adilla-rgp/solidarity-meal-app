@@ -5,17 +5,12 @@ from config import config_by_name
 
 def create_app(config_name='development'):
     app = Flask(__name__)
-    
-    # Carregar configurações
     app.config.from_object(config_by_name[config_name])
-    
-    # Configurar logging
+
     logging.basicConfig(
         level=app.config['LOG_LEVEL'],
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-    
-    # Configurar CORS para desenvolvimento
     CORS(app, resources={
         r"/*": {
             "origins": ["http://localhost:3000", "http://127.0.0.1:3000", 
@@ -29,14 +24,12 @@ def create_app(config_name='development'):
         }
     })
     
-    # Inicializar extensões
     from .extensions import db, bcrypt, jwt, migrate
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
     migrate.init_app(app, db)
     
-    # Configurar JWT callbacks
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
         return jsonify({
@@ -58,30 +51,34 @@ def create_app(config_name='development'):
             'message': 'Token de autenticação não fornecido'
         }), 401
     
-    # Registrar blueprints/rotas
-    from .routes.auth import auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/api')
+    # Registra blueprints/rotas
+    from .routes import auth_bp, doador_bp, beneficiario_bp, doacao_bp, reserva_bp
     
-    # Health check básico
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(doador_bp)
+    app.register_blueprint(beneficiario_bp)
+    app.register_blueprint(doacao_bp)
+    app.register_blueprint(reserva_bp)
+    
+    #rota raiz
     @app.route('/')
     def index():
         return jsonify({
-            'name': 'Solidarity Meal API',
+            'name': 'Prato Solidário API',
             'version': '1.0.0',
             'status': 'online',
             'endpoints': {
                 'auth': '/api/*',
-                'health': '/api/health',
-                'register': '/api/register',
-                'login': '/api/login',
-                'profile': '/api/me',
-                'validate': '/api/validate-token',
-                'refresh': '/api/refresh',
-                'logout': '/api/logout'
+                'doador': '/api/doador/*',
+                'beneficiario': '/api/beneficiario/*',
+                'doacoes': '/api/doacoes/*',
+                'reservas': '/api/reservas/*',
+                'health': '/api/health'
             }
         })
     
-    # Error handlers
+
+
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({'error': 'Endpoint não encontrado'}), 404
