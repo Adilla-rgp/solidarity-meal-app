@@ -55,7 +55,7 @@ try:
                 print(f" DEFAULT: {default}", end="")
             print()
         
-        # 3. Verificar índices
+        # 3. Verificar Ã­ndices
         print("\nINDICES DA TABELA 'users':")
         cur.execute("""
             SELECT 
@@ -80,18 +80,18 @@ try:
         
         indices = cur.fetchall()
         for idx in indices:
-            print(f"  {idx[0]:30} → {idx[1]}")
+            print(f"  {idx[0]:30} â {idx[1]}")
         
         # 4. Contar registros
         cur.execute("SELECT COUNT(*) FROM users;")
         count = cur.fetchone()[0]
-        print(f"\nTotal de usuários registrados: {count}")
+        print(f"\nTotal de usuÃ¡rios registrados: {count}")
         
     else:
-        print("Tabela 'users' NÃO encontrada!")
+        print("Tabela 'users' NÃO encontrada!")
         
         # Mostrar todas as tabelas
-        print("\nTodas as tabelas disponíveis:")
+        print("\nTodas as tabelas disponÃ­veis:")
         cur.execute("""
             SELECT table_name 
             FROM information_schema.tables 
@@ -108,6 +108,6 @@ try:
 except Exception as e:
     print(f"Erro: {e}")
     print("\nVerifique:")
-    print("   1. Se o PostgreSQL está rodando")
-    print("   2. Se a senha no código está correta")
+    print("   1. Se o PostgreSQL estÃ¡ rodando")
+    print("   2. Se a senha no cÃ³digo estÃ¡ correta")
     print("   3. Se o banco 'auth_system' existe")

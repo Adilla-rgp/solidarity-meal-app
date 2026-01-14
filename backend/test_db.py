@@ -1,23 +1,23 @@
 import psycopg2
 
-# CONFIGURAÇÃO - AJUSTE COM SUAS CREDENCIAIS
+# CONFIGURAÃÃO - AJUSTE COM SUAS CREDENCIAIS
 config = {
     "host": "localhost",
     "port": "5432",
     "database": "auth_system",
     "user": "postgres",
-    "password": "14032005"  # ← COLOQUE A SENHA DO SEU POSTGRES
+    "password": "14032005"  # â COLOQUE A SENHA DO SEU POSTGRES
 }
 
 try:
-    print("Testando conexão com PostgreSQL...")
+    print("Testando conexÃ£o com PostgreSQL...")
     print(f"Host: {config['host']}:{config['port']}")
     print(f"Database: {config['database']}")
     print(f"User: {config['user']}")
     
     conn = psycopg2.connect(**config)
     
-    # Testar versão do PostgreSQL
+    # Testar versÃ£o do PostgreSQL
     cur = conn.cursor()
     cur.execute("SELECT version();")
     version = cur.fetchone()

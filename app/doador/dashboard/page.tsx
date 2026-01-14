@@ -4,36 +4,69 @@ import QuadroEstatistico from "@/app/components/QuadroEstatistico";
 import GraficoMensal from "@/app/components/GraficoMensal";
 import ItemDeDoacao from "@/app/components/ItemDeDoacao";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Package, Clock, CheckCircle } from "lucide-react";
 import { useDoador } from "@/app/contexts/DoadorContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { apiClient } from "@/app/lib/api/client";
+
+interface DashboardEstatisticas {
+  total_doacoes: number;
+  doacoes_ativas: number;
+  doacoes_reservadas: number;
+  doacoes_entregues: number;
+}
 
 export default function DashboardDoadorPage() {
-  const pathname = usePathname();
   const router = useRouter();
   const { doador, doacoes } = useDoador();
+  const [estatisticas, setEstatisticas] = useState<DashboardEstatisticas>({
+    total_doacoes: 0,
+    doacoes_ativas: 0,
+    doacoes_reservadas: 0,
+    doacoes_entregues: 0
+  });
 
+  const carregarEstatisticas = useCallback(async () => {
+    if (!doador) return;
+    
+    try {
+      const response = await apiClient.getEstatisticas();
+      if (response.success && response.data?.estatisticas) {
+        const stats = response.data.estatisticas;
+        setEstatisticas({
+          total_doacoes: stats.total_doacoes || 0,
+          doacoes_ativas: stats.doacoes_ativas || 0,
+          doacoes_reservadas: stats.doacoes_reservadas || 0,
+          doacoes_entregues: stats.doacoes_entregues || 0
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar estatísticas:', error);
+    }
+  }, [doador]);
+
+  // Carregar estatísticas quando o componente montar ou doador mudar
+  useEffect(() => {
+    const init = async () => {
+      if (doador) {
+        await carregarEstatisticas();
+      }
+    };
+    init();
+  }, [doador, carregarEstatisticas]);
+
+  // Redirecionar se não tiver doador
   useEffect(() => {
     if (!doador) {
-      alert("Complete seu cadastro primeiro!");
       router.push("/doador/cadastro");
     }
   }, [doador, router]);
 
-  const linkClasses = (path: string) => {
-    const isActive = pathname === path;
-    return `flex items-center gap-3 px-6 py-3 rounded-md font-medium transition ${
-      isActive
-        ? "bg-green-600 text-white"
-        : "text-gray-700 hover:bg-green-50 hover:text-green-700"
-    }`;
-  };
-
-  // cálculo das estatísticas
-  const doacoesAtivas = doacoes.filter((d) => d.status === "ativa").length;
-  const doacoesPendentes = doacoes.filter((d) => d.status === "reservada").length;
-  const doacoesFinalizadas = doacoes.filter((d) => d.status === "entregue").length;
+  // cálculo das estatísticas (fallback se API falhar)
+  const doacoesAtivas = estatisticas.doacoes_ativas || doacoes.filter((d) => d.status === "ativa").length;
+  const doacoesPendentes = estatisticas.doacoes_reservadas || doacoes.filter((d) => d.status === "reservada").length;
+  const doacoesFinalizadas = estatisticas.doacoes_entregues || doacoes.filter((d) => d.status === "entregue").length;
 
   // pega últimas 3 doações ativas
   const ultimasDoacoes = doacoes
@@ -41,10 +74,13 @@ export default function DashboardDoadorPage() {
     .slice(-3)
     .reverse();
 
-  // calcular limite de urgência apenas uma vez na montagem (lazy initializer)
-  const [limiteUrgencia] = useState<Date>(() => {
-    return new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
-  });
+  // Calcular se é urgente (validade <= 2 dias) - memoizado
+  const calcularUrgente = useCallback((validade: string) => {
+    const dataValidade = new Date(validade);
+    const hoje = new Date();
+    const doisDias = 2 * 24 * 60 * 60 * 1000; // 2 dias em milissegundos
+    return dataValidade.getTime() <= hoje.getTime() + doisDias;
+  }, []);
 
   if (!doador) {
     return null;
@@ -63,14 +99,12 @@ export default function DashboardDoadorPage() {
           </div>
 
           {/* botão de nova doação */}
-          <button className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
-            <Link
-              href="/doador/nova_doacao"
-              className={linkClasses("/doador/nova_doacao")}
-            >
-              <span className="text-xl">+</span> Nova Doação
-            </Link>
-          </button>
+          <Link
+            href="/doador/nova_doacao"
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
+          >
+            <span className="text-xl">+</span> Nova Doação
+          </Link>
         </div>
 
         {/* quadros estatísticos das doações */}
@@ -118,8 +152,8 @@ export default function DashboardDoadorPage() {
                     nome={doacao.nome}
                     peso={`${doacao.quantidade} ${doacao.unidade}`}
                     visualizacoes={0}
-                    validade={`Vence em ${doacao.validade}`}
-                    urgente={new Date(doacao.validade) <= limiteUrgencia}
+                    validade={`Vence em ${new Date(doacao.validade).toLocaleDateString('pt-BR')}`}
+                    urgente={calcularUrgente(doacao.validade)}
                   />
                 ))}
               </div>
@@ -195,7 +229,9 @@ export default function DashboardDoadorPage() {
                             : "Entregue"}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{doacao.data}</td>
+                      <td className="py-3 px-4 text-gray-600">
+                        {doacao.created_at ? new Date(doacao.created_at).toLocaleDateString('pt-BR') : '-'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

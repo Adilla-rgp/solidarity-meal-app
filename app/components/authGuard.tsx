@@ -10,16 +10,27 @@ interface Props {
 }
 
 export function AuthGuard({ children, tipoPermitido }: Props) {
-  const { auth } = useAuth();
+  const { auth, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!auth || auth.tipo !== tipoPermitido) {
-      router.replace("/login");
+    if (!loading) {
+      if (!auth) {
+        router.replace("/login");
+      } else if (auth.tipo !== tipoPermitido) {
+        // Redirecionar para a página correta baseada no tipo de usuário
+        router.replace(auth.tipo === "doador" ? "/doador/dashboard" : "/beneficiario/doacoes");
+      }
     }
-  }, [auth, tipoPermitido, router]);
+  }, [auth, loading, tipoPermitido, router]);
 
-  if (!auth || auth.tipo !== tipoPermitido) return null;
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
+  }
+
+  if (!auth || auth.tipo !== tipoPermitido) {
+    return null;
+  }
 
   return <>{children}</>;
 }

@@ -1,152 +1,200 @@
-import { ApiResponse, UnknownData } from './types/api.types';
+import { authService } from './auth.service';
+
+// Definir URL da API
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
+export interface ApiResponse<T = unknown> {
+    success: boolean;
+    data?: T;
+    error?: string;
+    message?: string;
+    [key: string]: unknown;
+}
+
+export interface Doacao {
+    id: string;
+    nome: string;
+    doador: string;
+    tipo: string;
+    quantidade: number;
+    validade: string;
+    distancia: string;
+    urgente?: boolean;
+    imagem: string;
+    status: "ativa" | "reservada" | "entregue";
+    descricao?: string;
+    unidade?: string;
+    doador_estabelecimento?: string;
+    created_at?: string;
+}
+
+export interface Reserva {
+    id: string;
+    beneficiario_id: number;
+    doacao_id: string;
+    status: "ativa" | "cancelada" | "concluida";
+    data_reserva: string;
+    data_conclusao?: string;
+    doacao?: Doacao;
+}
+
+export interface Estatisticas {
+    total_doacoes?: number;
+    doacoes_ativas?: number;
+    doacoes_reservadas?: number;
+    doacoes_entregues?: number;
+    doacoes_recentes?: number;
+    total_reservas?: number;
+    reservas_ativas?: number;
+    reservas_concluidas?: number;
+    reservas_canceladas?: number;
+}
+
+interface MockData {
+    tiposAlimento: Array<{value: string, label: string}>;
+    unidades: Array<{value: string, label: string}>;
+}
+
+interface DoacoesResponse {
+    doacoes: Doacao[];
+    total?: number;
+}
+
+interface ReservasResponse {
+    reservas: Reserva[];
+    total?: number;
+}
+
+interface EstatisticasResponse {
+    estatisticas: Estatisticas;
+}
+
+interface GraficoResponse {
+    dados: Array<{mes: string, quantidade: number}>;
+}
 
 class ApiClient {
-    private baseURL: string;
-    private defaultHeaders: Record<string, string>;
-
-    constructor(baseURL: string = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api') {
-        this.baseURL = baseURL;
-        this.defaultHeaders = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        };
-    }
-
     private async request<T>(
-        endpoint: string,
+        endpoint: string, 
         options: RequestInit = {}
     ): Promise<ApiResponse<T>> {
-        const url = `${this.baseURL}${endpoint}`;
+        const token = authService.getToken();
         
-        // Adicionar token de autenticação se existir
-        const token = this.getToken();
         const headers: Record<string, string> = {
-            ...this.defaultHeaders,
-            ...options.headers as Record<string, string>,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            ...options.headers as Record<string, string>
         };
-
+        
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-
+        
         try {
-            const response = await fetch(url, {
+            const response = await fetch(`${API_URL}${endpoint}`, {
                 ...options,
                 headers,
+                credentials: 'include' as RequestCredentials
             });
-
-            const data = await response.json();
-
+            
+            let data: unknown = {};
+            try {
+                data = await response.json();
+            } catch {
+                // Se não conseguir parsear JSON, usar resposta vazia
+            }
+            
             if (!response.ok) {
-                // Se token expirado
+                // Se token expirou, fazer logout
                 if (response.status === 401) {
-                    this.handleUnauthorized();
+                    await authService.logout();
                 }
-
+                
                 return {
                     success: false,
-                    error: data.error || 'Erro na requisição',
-                    status: response.status,
-                    message: data.message,
+                    error: (data as {error?: string})?.error || `Erro ${response.status}: ${response.statusText}`
                 };
             }
-
+            
             return {
                 success: true,
-                data,
-                status: response.status,
-            };
-
+                ...data as object
+            } as ApiResponse<T>;
+            
         } catch (error) {
-            console.error('API Request Error:', error);
+            console.error(`Erro na requisição ${endpoint}:`, error);
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Erro de conexão',
-                status: 0,
+                error: error instanceof Error ? error.message : 'Erro de conexão'
             };
         }
     }
-
-    private getToken(): string | null {
-        if (typeof window === 'undefined') return null;
-        return localStorage.getItem('access_token');
+    
+    async get<T = unknown>(endpoint: string): Promise<ApiResponse<T>> {
+        return this.request<T>(endpoint, { method: 'GET' });
     }
-
-    private setToken(token: string): void {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('access_token', token);
-        }
-    }
-
-    private handleUnauthorized(): void {
-        // Limpar token e redirecionar para login
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
-        
-        // Redirecionar para login se estiver no client side
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-            window.location.href = '/login';
-        }
-    }
-
-    // Métodos HTTP genéricos
-    async get<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
-        return this.request<T>(endpoint, { ...options, method: 'GET' });
-    }
-
-    async post<T>(endpoint: string, data?: UnknownData, options?: RequestInit): Promise<ApiResponse<T>> {
+    
+    async post<T = unknown>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
         return this.request<T>(endpoint, {
-            ...options,
             method: 'POST',
-            body: data ? JSON.stringify(data) : undefined,
+            body: body ? JSON.stringify(body) : undefined
         });
     }
-
-    async put<T>(endpoint: string, data?: UnknownData, options?: RequestInit): Promise<ApiResponse<T>> {
+    
+    async put<T = unknown>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
         return this.request<T>(endpoint, {
-            ...options,
             method: 'PUT',
-            body: data ? JSON.stringify(data) : undefined,
+            body: body ? JSON.stringify(body) : undefined
         });
     }
-
-    async patch<T>(endpoint: string, data?: UnknownData, options?: RequestInit): Promise<ApiResponse<T>> {
-        return this.request<T>(endpoint, {
-            ...options,
-            method: 'PATCH',
-            body: data ? JSON.stringify(data) : undefined,
-        });
+    
+    async delete<T = unknown>(endpoint: string): Promise<ApiResponse<T>> {
+        return this.request<T>(endpoint, { method: 'DELETE' });
     }
-
-    async delete<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
-        return this.request<T>(endpoint, { ...options, method: 'DELETE' });
+    
+    // Métodos específicos para doações
+    async listarDoacoes(): Promise<ApiResponse<DoacoesResponse>> {
+        return this.get<DoacoesResponse>('/doacoes');
     }
-
-    // Método para dados tipados (para evitar erros de assinatura de índice)
-    async postTyped<T, D extends Record<string, unknown>>(endpoint: string, data: D, options?: RequestInit): Promise<ApiResponse<T>> {
-        return this.request<T>(endpoint, {
-            ...options,
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
+    
+    async criarDoacao(doacaoData: Omit<Doacao, "id" | "doador" | "doador_estabelecimento" | "created_at">): Promise<ApiResponse<{doacao: Doacao}>> {
+        return this.post<{doacao: Doacao}>('/doacoes', doacaoData);
     }
-
-    // Métodos para autenticação
-    setAuthToken(token: string): void {
-        this.setToken(token);
+    
+    async minhasDoacoes(): Promise<ApiResponse<DoacoesResponse>> {
+        return this.get<DoacoesResponse>('/minhas-doacoes');
     }
-
-    clearAuth(): void {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('user');
+    
+    // Métodos específicos para reservas
+    async criarReserva(doacaoId: string): Promise<ApiResponse<{reserva: Reserva}>> {
+        return this.post<{reserva: Reserva}>('/reservas', { doacao_id: doacaoId });
     }
-
-    isAuthenticated(): boolean {
-        return !!this.getToken();
+    
+    async minhasReservas(): Promise<ApiResponse<ReservasResponse>> {
+        return this.get<ReservasResponse>('/minhas-reservas');
+    }
+    
+    async cancelarReserva(reservaId: string): Promise<ApiResponse> {
+        return this.post(`/reservas/${reservaId}/cancelar`);
+    }
+    
+    async concluirReserva(reservaId: string): Promise<ApiResponse> {
+        return this.post(`/reservas/${reservaId}/concluir`);
+    }
+    
+    // Métodos para estatísticas
+    async getEstatisticas(): Promise<ApiResponse<EstatisticasResponse>> {
+        return this.get<EstatisticasResponse>('/estatisticas');
+    }
+    
+    async getGraficoMensal(): Promise<ApiResponse<GraficoResponse>> {
+        return this.get<GraficoResponse>('/grafico-mensal');
+    }
+    
+    // Métodos para mocks
+    async getMocks(): Promise<ApiResponse<MockData>> {
+        return this.get<MockData>('/mocks');
     }
 }
 
-// Exportar instância singleton
 export const apiClient = new ApiClient();

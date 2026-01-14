@@ -18,18 +18,15 @@ export default function LoginPage() {
     e.preventDefault();
     setErro("");
 
-    const sucesso = await login(email, senha, tipoUsuario);
+    const sucesso = await login(email, senha);
 
     if (!sucesso) {
       setErro("Email ou senha inválidos");
       return;
     }
 
-    router.push(
-      tipoUsuario === "doador"
-        ? "/doador/dashboard"
-        : "/beneficiario/doacoes"
-    );
+    // O redirecionamento é feito pelo AuthProvider
+    // Não precisa fazer router.push aqui
   }
 
   function handleCadastro() {

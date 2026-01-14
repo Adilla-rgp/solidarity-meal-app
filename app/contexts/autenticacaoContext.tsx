@@ -1,82 +1,113 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
-import { authService } from "../lib/api/auth.service";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { authService } from "@/app/lib/api/auth.service";
 
 type TipoUsuario = "doador" | "beneficiario";
 
 interface AuthData {
   email: string;
   tipo: TipoUsuario;
-  logado: boolean;
-  username?: string;
-  user_id?: number;
+  nome?: string;
+  id?: number;
+  estabelecimento?: string;
+  endereco?: string;
+  telefone?: string;
+  localizacao?: string;
+  necessidade?: string;
 }
 
 interface AuthContextType {
   auth: AuthData | null;
-  login: (email: string, senha: string, tipo: TipoUsuario) => Promise<boolean>;
+  login: (email: string, senha: string) => Promise<boolean>;
   logout: () => Promise<void>;
   loading: boolean;
   checkAuth: () => boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [auth, setAuth] = useState<AuthData | null>(() => {
-    if (typeof window === "undefined") return null;
-
-    // Verificar se já tem token válido
-    if (authService.isAuthenticated()) {
-      const user = authService.getUser();
-      return {
-        email: user?.email as string || "",
-        tipo: (user?.tipo as TipoUsuario) || "doador",
-        logado: true,
-        username: user?.username as string,
-        user_id: user?.id as number,
-      };
-    }
-
-    return null;
-  });
-
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const [auth, setAuth] = useState<AuthData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
-  async function login(email: string, senha: string, tipo: TipoUsuario): Promise<boolean> {
+  // Carregar usuário ao inicializar
+  useEffect(() => {
+    const loadUser = async () => {
+      if (authService.isAuthenticated()) {
+        try {
+          const user = await authService.me();
+          if (user) {
+            setAuth({
+              email: user.email,
+              tipo: user.tipo,
+              nome: user.nome,
+              id: user.id,
+              estabelecimento: user.estabelecimento,
+              endereco: user.endereco,
+              telefone: user.telefone,
+              localizacao: user.localizacao,
+              necessidade: user.necessidade
+            });
+          } else {
+            // Token inválido, fazer logout
+            await authService.logout();
+          }
+        } catch (error) {
+          console.error('Erro ao carregar usuário:', error);
+        }
+      }
+      setInitializing(false);
+    };
+
+    loadUser();
+  }, []);
+
+  async function login(email: string, senha: string): Promise<boolean> {
     if (!email || !senha) return false;
 
     setLoading(true);
     
     try {
-      // Agora o backend aceita email OU username
-      const result = await authService.login({
-        username: email, // Pode ser email ou username
-        password: senha
-      });
-
-      if (!result.success) {
-        console.error("Login falhou:", result.error);
+      const result = await authService.login({ email, senha });
+      
+      if (!result.success || !result.user || !result.user.tipo) {
+        console.error('Login falhou:', result.error || 'Usuário ou tipo não encontrado');
         return false;
       }
 
-      const user = authService.getUser();
+      // Agora temos certeza que result.user.tipo existe
+      const user = result.user;
       
-      const authData: AuthData = {
-        email: user?.email as string || email,
-        tipo: (user?.tipo as TipoUsuario) || tipo,
-        logado: true,
-        username: user?.username as string,
-        user_id: user?.id as number,
-      };
-
-      localStorage.setItem("auth", JSON.stringify(authData));
-      setAuth(authData);
+      setAuth({
+        email: user.email,
+        tipo: user.tipo,
+        nome: user.nome,
+        id: user.id,
+        estabelecimento: user.estabelecimento,
+        endereco: user.endereco,
+        telefone: user.telefone,
+        localizacao: user.localizacao,
+        necessidade: user.necessidade
+      });
+      
+      // Redireciona baseado no tipo retornado pelo backend
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          router.push(
+            user.tipo === "doador"
+              ? "/doador/dashboard"
+              : "/beneficiario/doacoes"
+          );
+        }, 100);
+      }
+      
       return true;
-
     } catch (error) {
-      console.error("Login error:", error);
+      console.error('Login error:', error);
       return false;
     } finally {
       setLoading(false);
@@ -85,25 +116,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function logout(): Promise<void> {
     await authService.logout();
-    localStorage.removeItem("auth");
     setAuth(null);
+    router.push("/login");
   }
 
   function checkAuth(): boolean {
     const isAuthenticated = authService.isAuthenticated();
-    
     if (!isAuthenticated && auth) {
       setAuth(null);
-      localStorage.removeItem("auth");
     }
-    
     return isAuthenticated;
   }
 
-  // Verificar autenticação ao carregar
-  useEffect(() => {
-    checkAuth();
-  }, []);
+  if (initializing) {
+    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
+  }
 
   return (
     <AuthContext.Provider value={{ auth, login, logout, loading, checkAuth }}>
@@ -113,5 +140,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
 }

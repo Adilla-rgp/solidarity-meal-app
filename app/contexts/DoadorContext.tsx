@@ -1,23 +1,11 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
-
-interface Doacao {
-  id: string;
-  nome: string;
-  tipo: string;
-  quantidade: string;
-  unidade: string;
-  validade: string;
-  descricao: string;
-  imagem?: string;
-  data: string;
-  status: "ativa" | "reservada" | "entregue";
-  doadorEmail: string;
-}
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import { apiClient, Doacao } from "@/app/lib/api/client";
+import { useAuth } from "./autenticacaoContext";
 
 interface Doador {
-  id: string;
+  id: number;
   estabelecimento: string;
   email: string;
   nome?: string;
@@ -28,76 +16,85 @@ interface Doador {
 interface DoadorContextType {
   doador: Doador | null;
   doacoes: Doacao[];
-  adicionarDoacao: (
-    doacao: Omit<Doacao, "id" | "status" | "data" | "doadorEmail">
-  ) => void;
-  atualizarStatusDoacao: (
-    doacaoId: string,
-    status: "ativa" | "reservada" | "entregue"
-  ) => void;
-  cadastrarDoador: (dados: Omit<Doador, "id">) => void;
-  carregarDoador: (email: string) => void;
+  loading: boolean;
+  adicionarDoacao: (doacaoData: Omit<Doacao, "id" | "doador" | "doador_estabelecimento" | "created_at">) => Promise<boolean>;
+  atualizarStatusDoacao: (doacaoId: string, status: Doacao["status"]) => Promise<void>;
+  carregarDoacoes: () => Promise<void>;
 }
 
 const DoadorContext = createContext<DoadorContextType | undefined>(undefined);
 
 export function DoadorProvider({ children }: { children: ReactNode }) {
+  const { auth } = useAuth();
   const [doador, setDoador] = useState<Doador | null>(null);
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const carregarDoador = (email: string) => {
-    const doadores = JSON.parse(localStorage.getItem("doadores") || "[]");
-    const encontrado = doadores.find(
-      (d: Doador) => d.email.toLowerCase() === email.toLowerCase()
-    );
+  const carregarDoacoes = useCallback(async () => {
+    if (auth?.tipo !== 'doador') return;
+    
+    setLoading(true);
+    try {
+      const response = await apiClient.minhasDoacoes();
+      if (response.success && response.data?.doacoes) {
+        setDoacoes(response.data.doacoes);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar doações:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [auth?.tipo]);
 
-    if (encontrado) {
-      setDoador(encontrado);
-      setDoacoes(
-        JSON.parse(localStorage.getItem("doacoes") || "[]").filter(
-          (d: Doacao) => d.doadorEmail === email
-        )
-      );
+  // Carregar dados do doador
+  useEffect(() => {
+    if (auth?.tipo === 'doador' && auth) {
+      setDoador({
+        id: auth.id || 0,
+        estabelecimento: auth.estabelecimento || '',
+        email: auth.email,
+        nome: auth.nome,
+        telefone: auth.telefone,
+        localizacao: auth.localizacao
+      });
+      carregarDoacoes();
+    }
+  }, [auth, carregarDoacoes]);
+
+  const adicionarDoacao = async (doacaoData: Omit<Doacao, "id" | "doador" | "doador_estabelecimento" | "created_at">): Promise<boolean> => {
+    setLoading(true);
+    try {
+      // Garantir que o status seja "ativa" por padrão
+      const doacaoComStatus: Omit<Doacao, "id" | "doador" | "doador_estabelecimento" | "created_at"> = {
+        ...doacaoData,
+        status: "ativa"
+      };
+      
+      const response = await apiClient.criarDoacao(doacaoComStatus);
+      if (response.success && response.data?.doacao) {
+        setDoacoes(prev => [...prev, response.data!.doacao]);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Erro ao adicionar doação:', error);
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const adicionarDoacao = (
-    novaDoacao: Omit<Doacao, "id" | "status" | "data" | "doadorEmail">
-  ) => {
-    if (!doador) return;
-
-    const doacao: Doacao = {
-      id: crypto.randomUUID(),
-      ...novaDoacao,
-      status: "ativa",
-      data: new Date().toLocaleDateString("pt-BR"),
-      doadorEmail: doador.email,
-    };
-
-    const atualizadas = [...doacoes, doacao];
-    setDoacoes(atualizadas);
-    localStorage.setItem("doacoes", JSON.stringify(atualizadas));
-  };
-
-  const atualizarStatusDoacao = (id: string, status: Doacao["status"]) => {
-    const atualizadas = doacoes.map((d) =>
-      d.id === id ? { ...d, status } : d
-    );
-    setDoacoes(atualizadas);
-    localStorage.setItem("doacoes", JSON.stringify(atualizadas));
-  };
-
-  const cadastrarDoador = (dados: Omit<Doador, "id">) => {
-    const lista = JSON.parse(localStorage.getItem("doadores") || "[]");
-
-    const novo: Doador = {
-      id: crypto.randomUUID(),
-      ...dados,
-    };
-
-    lista.push(novo);
-    localStorage.setItem("doadores", JSON.stringify(lista));
-    setDoador(novo);
+  const atualizarStatusDoacao = async (doacaoId: string, status: Doacao["status"]) => {
+    try {
+      const response = await apiClient.put(`/doacoes/${doacaoId}`, { status });
+      if (response.success) {
+        setDoacoes(prev => 
+          prev.map(d => d.id === doacaoId ? { ...d, status } : d)
+        );
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+    }
   };
 
   return (
@@ -105,10 +102,10 @@ export function DoadorProvider({ children }: { children: ReactNode }) {
       value={{
         doador,
         doacoes,
+        loading,
         adicionarDoacao,
         atualizarStatusDoacao,
-        cadastrarDoador,
-        carregarDoador,
+        carregarDoacoes
       }}
     >
       {children}
@@ -117,7 +114,9 @@ export function DoadorProvider({ children }: { children: ReactNode }) {
 }
 
 export function useDoador() {
-  const ctx = useContext(DoadorContext);
-  if (!ctx) throw new Error("useDoador fora do provider");
-  return ctx;
+  const context = useContext(DoadorContext);
+  if (context === undefined) {
+    throw new Error('useDoador deve ser usado dentro de um DoadorProvider');
+  }
+  return context;
 }

@@ -1,16 +1,11 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
-
-interface Reserva {
-  id: string;
-  doacaoId: string;
-  data: string;
-  status: "ativa" | "cancelada" | "concluida";
-}
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import { apiClient, Reserva } from "@/app/lib/api/client";
+import { useAuth } from "./autenticacaoContext";
 
 interface Beneficiario {
-  id: string;
+  id: number;
   nome: string;
   email: string;
   endereco: string;
@@ -21,76 +16,91 @@ interface Beneficiario {
 interface BeneficiarioContextType {
   beneficiario: Beneficiario | null;
   reservas: Reserva[];
-  adicionarReserva: (reserva: { doacaoId: string }) => void;
-  removerReserva: (id: string) => void;
-  atualizarStatusReserva: (
-    id: string,
-    status: Reserva["status"]
-  ) => void;
-  cadastrarBeneficiario: (dados: Omit<Beneficiario, "id">) => void;
-  carregarBeneficiario: (email: string) => void;
+  loading: boolean;
+  adicionarReserva: (doacaoId: string) => Promise<boolean>;
+  removerReserva: (reservaId: string) => Promise<void>;
+  atualizarStatusReserva: (reservaId: string, status: Reserva["status"]) => Promise<void>;
+  carregarReservas: () => Promise<void>;
 }
 
-const BeneficiarioContext =
-  createContext<BeneficiarioContextType | undefined>(undefined);
+const BeneficiarioContext = createContext<BeneficiarioContextType | undefined>(undefined);
 
 export function BeneficiarioProvider({ children }: { children: ReactNode }) {
+  const { auth } = useAuth();
   const [beneficiario, setBeneficiario] = useState<Beneficiario | null>(null);
   const [reservas, setReservas] = useState<Reserva[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const carregarBeneficiario = (email: string) => {
-    const lista = JSON.parse(localStorage.getItem("beneficiarios") || "[]");
-    const encontrado = lista.find(
-      (b: Beneficiario) => b.email.toLowerCase() === email.toLowerCase()
-    );
+  const carregarReservas = useCallback(async () => {
+    if (auth?.tipo !== 'beneficiario') return;
+    
+    setLoading(true);
+    try {
+      const response = await apiClient.minhasReservas();
+      if (response.success && response.data?.reservas) {
+        setReservas(response.data.reservas);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar reservas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [auth?.tipo]);
 
-    if (encontrado) {
-      setBeneficiario(encontrado);
-      setReservas(JSON.parse(localStorage.getItem("reservas") || "[]"));
+  // Carregar dados do beneficiário
+  useEffect(() => {
+    if (auth?.tipo === 'beneficiario' && auth) {
+      setBeneficiario({
+        id: auth.id || 0,
+        nome: auth.nome || '',
+        email: auth.email,
+        endereco: auth.endereco || '',
+        telefone: auth.telefone,
+        necessidade: auth.necessidade
+      });
+      carregarReservas();
+    }
+  }, [auth, carregarReservas]);
+
+  const adicionarReserva = async (doacaoId: string): Promise<boolean> => {
+    setLoading(true);
+    try {
+      const response = await apiClient.criarReserva(doacaoId);
+      if (response.success && response.data?.reserva) {
+        await carregarReservas(); // Recarregar para ter dados atualizados
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Erro ao adicionar reserva:', error);
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const adicionarReserva = ({ doacaoId }: { doacaoId: string }) => {
-    const nova: Reserva = {
-      id: crypto.randomUUID(),
-      doacaoId,
-      data: new Date().toLocaleDateString("pt-BR"),
-      status: "ativa",
-    };
-
-    const atualizadas = [...reservas, nova];
-    setReservas(atualizadas);
-    localStorage.setItem("reservas", JSON.stringify(atualizadas));
+  const removerReserva = async (reservaId: string) => {
+    try {
+      const response = await apiClient.cancelarReserva(reservaId);
+      if (response.success) {
+        await carregarReservas(); // Recarregar lista atualizada
+      }
+    } catch (error) {
+      console.error('Erro ao remover reserva:', error);
+    }
   };
 
-  const removerReserva = (id: string) => {
-    const atualizadas = reservas.filter((r) => r.id !== id);
-    setReservas(atualizadas);
-    localStorage.setItem("reservas", JSON.stringify(atualizadas));
-  };
-
-  const atualizarStatusReserva = (
-    id: string,
-    status: Reserva["status"]
-  ) => {
-    const atualizadas = reservas.map((r) =>
-      r.id === id ? { ...r, status } : r
-    );
-    setReservas(atualizadas);
-    localStorage.setItem("reservas", JSON.stringify(atualizadas));
-  };
-
-  const cadastrarBeneficiario = (dados: Omit<Beneficiario, "id">) => {
-    const lista = JSON.parse(localStorage.getItem("beneficiarios") || "[]");
-
-    const novo: Beneficiario = {
-      id: crypto.randomUUID(),
-      ...dados,
-    };
-
-    lista.push(novo);
-    localStorage.setItem("beneficiarios", JSON.stringify(lista));
-    setBeneficiario(novo);
+  const atualizarStatusReserva = async (reservaId: string, status: Reserva["status"]) => {
+    try {
+      if (status === 'concluida') {
+        await apiClient.concluirReserva(reservaId);
+      } else if (status === 'cancelada') {
+        await apiClient.cancelarReserva(reservaId);
+      }
+      await carregarReservas(); // Recarregar lista atualizada
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+    }
   };
 
   return (
@@ -98,11 +108,11 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
       value={{
         beneficiario,
         reservas,
+        loading,
         adicionarReserva,
         removerReserva,
         atualizarStatusReserva,
-        cadastrarBeneficiario,
-        carregarBeneficiario,
+        carregarReservas
       }}
     >
       {children}
@@ -111,7 +121,9 @@ export function BeneficiarioProvider({ children }: { children: ReactNode }) {
 }
 
 export function useBeneficiario() {
-  const ctx = useContext(BeneficiarioContext);
-  if (!ctx) throw new Error("useBeneficiario fora do provider");
-  return ctx;
+  const context = useContext(BeneficiarioContext);
+  if (context === undefined) {
+    throw new Error('useBeneficiario deve ser usado dentro de um BeneficiarioProvider');
+  }
+  return context;
 }

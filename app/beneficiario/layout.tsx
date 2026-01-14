@@ -14,8 +14,7 @@ export default function BeneficiarioLayout({
   const pathname = usePathname();
   const { auth } = useAuth();
 
-  const semSidebar =
-    pathname.includes("/beneficiario/cadastro") || !auth?.logado;
+  const semSidebar = pathname.includes("/beneficiario/cadastro") || !auth;
 
   return (
     <BeneficiarioProvider>
@@ -28,4 +27,4 @@ export default function BeneficiarioLayout({
       </div>
     </BeneficiarioProvider>
   );
-}
+} 

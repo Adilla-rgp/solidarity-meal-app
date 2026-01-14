@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -11,7 +12,6 @@ export default function PerfilDoadorPage() {
 
   useEffect(() => {
     if (!doador) {
-      alert("Complete seu cadastro primeiro!");
       router.push("/doador/cadastro");
     }
   }, [doador, router]);
@@ -104,15 +104,10 @@ export default function PerfilDoadorPage() {
                 <thead>
                   <tr className="border-b border-gray-200 text-left">
                     <th className="py-3 px-4 text-gray-600 font-medium">Doação</th>
-
                     <th className="py-3 px-4 text-gray-600 font-medium">Tipo</th>
-
                     <th className="py-3 px-4 text-gray-600 font-medium">Quantidade</th>
-
                     <th className="py-3 px-4 text-gray-600 font-medium">Data</th>
-
                     <th className="py-3 px-4 text-gray-600 font-medium">Status</th>
-
                   </tr>
                 </thead>
 
@@ -129,41 +124,38 @@ export default function PerfilDoadorPage() {
                           {doacao.nome}
                         </td>
                         <td className="py-3 px-4 text-gray-600">{doacao.tipo}</td>
-
                         <td className="py-3 px-4 text-gray-600">{doacao.quantidade} {doacao.unidade}</td>
-
-                        <td className="py-3 px-4 text-gray-600"> {doacao.data}</td>
-
+                        <td className="py-3 px-4 text-gray-600">
+                          {doacao.created_at ? new Date(doacao.created_at).toLocaleDateString('pt-BR') : '-'}
+                        </td>
                         <td className="py-3 px-4">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${doacao.status === "ativa"
-                              ? "bg-green-100 text-green-700"
-                              : doacao.status === "reservada"
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              doacao.status === "ativa"
+                                ? "bg-green-100 text-green-700"
+                                : doacao.status === "reservada"
                                 ? "bg-orange-100 text-orange-700"
                                 : "bg-blue-100 text-blue-700"
-                              }`}
+                            }`}
                           >
-
                             {doacao.status === "ativa" ? "Ativa" : doacao.status === "reservada" ? "Reservada" : "Entregue"}
-
                           </span>
                         </td>
                       </tr>
                     ))}
-
                 </tbody>
               </table>
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">Você ainda não realizou nenhuma doação. </p>
-
+              <p className="text-gray-500 mb-4">Você ainda não realizou nenhuma doação.</p>
               <Link
                 href="/doador/nova_doacao"
                 className="inline-block px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
-              >Fazer Primeira Doação</Link>
+              >
+                Fazer Primeira Doação
+              </Link>
             </div>
-
           )}
         </section>
 
@@ -172,7 +164,6 @@ export default function PerfilDoadorPage() {
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Informações de Contato</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
             <div>
               <p className="text-sm text-gray-500 mb-1">Email</p>
               <p className="text-gray-800 font-medium">{doador.email}</p>
@@ -187,7 +178,6 @@ export default function PerfilDoadorPage() {
               <p className="text-sm text-gray-500 mb-1">Endereço</p>
               <p className="text-gray-800 font-medium">{doador.localizacao}</p>
             </div>
-
           </div>
         </section>
       </main>

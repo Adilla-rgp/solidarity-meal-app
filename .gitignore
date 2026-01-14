@@ -1,5 +1,10 @@
+# Node
 node_modules/
 .next/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
 # Python
 __pycache__/
 *.py[cod]
@@ -8,19 +13,26 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Config / Secrets
 .env
 *.env
-.venv
+*.ini
+*.cfg
 
 # Database
 instance/
 *.db
 *.sqlite3
 
-# Migrations
+# Migrations (se não quiser versionar)
 migrations/
 
-# IDE
+# IDE / Editor
 .vscode/
 .idea/
 *.swp
@@ -28,7 +40,35 @@ migrations/
 
 # Logs
 *.log
+*.out
+*.err
 
-# OS
+# OS / Sistema
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Test / Coverage
+.coverage
+.tox/
+.nox/
+.pytest_cache/
+coverage.xml
+htmlcov/
+*.cover
+*.py,cover
+
+# Build / Distribuição
+dist/
+build/
+*.egg-info/
+.eggs/
+*.egg
+MANIFEST
+
+# Cache
+.cache/
+*.bak
+*.tmp
+*.temp

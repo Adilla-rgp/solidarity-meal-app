@@ -64,19 +64,30 @@ export default function CadastroDoadorPage() {
         e.preventDefault();
         setFormError("");
 
+        console.log("🔍 FRONTEND DEBUG - Formulário submetido:", formData);
+
         if (!validateForm()) {
+            console.log("🔍 FRONTEND DEBUG - Validação falhou:", errors);
             return;
         }
 
         setLoading(true);
 
         try {
+            console.log("🔍 FRONTEND DEBUG - Iniciando registro...");
+            
             // Registrar no backend
             const result = await authService.register({
-                username: formData.nome,
                 email: formData.email,
-                password: formData.senha,
+                senha: formData.senha,
+                tipo: "doador",
+                nome: formData.nome,
+                telefone: formData.telefone,
+                estabelecimento: formData.estabelecimento,
+                localizacao: formData.localizacao
             });
+
+            console.log("🔍 FRONTEND DEBUG - Resultado do registro:", result);
 
             if (!result.success) {
                 setFormError(result.error || "Erro ao criar conta");
@@ -86,7 +97,7 @@ export default function CadastroDoadorPage() {
 
             alert("Cadastro realizado com sucesso! Faça login para continuar.");
             
-            // Redirecionar para login (NÃO para dashboard)
+            // Redirecionar para login
             router.push("/login");
             
         } catch (error) {
