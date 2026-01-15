@@ -5,26 +5,23 @@ from extensions import db, bcrypt, jwt, cors, migrate
 def create_app(config_name='development'):
     app = Flask(__name__)
     app.config.from_object(config_by_name[config_name])
+
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": ["http://localhost:3000", "http://127.0.0.1:3000"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True,
+            "max_age": 3600
+        }
+    })
     
     # Inicializar extensões
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
-    cors.init_app(app, supports_credentials=True)
     migrate.init_app(app, db)
-    
-    # Configurar CORS
-    @app.after_request
-    def after_request(response):
-        origin = request.headers.get('Origin')
-        if origin and origin in app.config.get('CORS_ORIGINS', []):
-            response.headers.add('Access-Control-Allow-Origin', origin)
-            response.headers.add('Access-Control-Allow-Headers', 
-                                 'Content-Type, Authorization, Accept')
-            response.headers.add('Access-Control-Allow-Methods', 
-                                 'GET, POST, PUT, DELETE, OPTIONS')
-            response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
     
     # Importar e registrar blueprints
     from auth_routes import auth_bp
