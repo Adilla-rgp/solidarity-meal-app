@@ -118,8 +118,9 @@ class ApiClient {
             
             return {
                 success: true,
-                ...data as object
+                data: data as T
             } as ApiResponse<T>;
+
             
         } catch (error) {
             console.error(`Erro na requisição ${endpoint}:`, error);

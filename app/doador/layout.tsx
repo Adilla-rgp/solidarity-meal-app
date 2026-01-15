@@ -3,8 +3,8 @@
 import { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
-import { AuthGuard } from "../components/authGuard";
-import { DoadorProvider } from "../contexts/DoadorContext";
+import { DoadorProvider } from "@/app/contexts/DoadorContext";
+import { useAuth } from "@/app/contexts/autenticacaoContext";
 
 export default function DoadorLayout({
   children,
@@ -12,34 +12,19 @@ export default function DoadorLayout({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const { auth } = useAuth();
 
-  const semSidebar = pathname.includes("/doador/cadastro");
-  const isCadastroPage = pathname.includes("/doador/cadastro");
+  // Sidebar não aparece na página de cadastro ou quando não há autenticação
+  const semSidebar = pathname.includes("/doador/cadastro") || !auth;
 
-  // Página de cadastro - SEM AuthGuard
-  if (isCadastroPage) {
-    return (
-      <DoadorProvider>
-        <div className="flex min-h-screen w-full">
-          <main className="flex-1 bg-gray-50">
-            <div className="p-6">{children}</div>
-          </main>
-        </div>
-      </DoadorProvider>
-    );
-  }
-
-  // Outras páginas do doador - COM AuthGuard
   return (
-    <AuthGuard tipoPermitido="doador">
-      <DoadorProvider>
-        <div className="flex min-h-screen w-full">
-          {!semSidebar && <Sidebar />}
-          <main className="flex-1 bg-gray-50">
-            <div className="p-6">{children}</div>
-          </main>
-        </div>
-      </DoadorProvider>
-    </AuthGuard>
+    <DoadorProvider>
+      <div className="flex min-h-screen w-full">
+        {!semSidebar && <Sidebar />}
+        <main className="flex-1 bg-gray-50">
+          <div className="p-6">{children}</div>
+        </main>
+      </div>
+    </DoadorProvider>
   );
 }

@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import DonationCard from "../../components/DonationCard";
 import FilterBar from "../../components/FilterBar";
 import SearchBar from "../../components/SearchBar";
-import Topbar from "../../components/Topbar";
 import { useBeneficiario } from "@/app/contexts/BeneficiarioContext";
 import { apiClient, Doacao } from "@/app/lib/api/client";
+import Topbar from "@/app/components/TopBar";
 
 export default function DoacoesPage() {
   const [doacoes, setDoacoes] = useState<Doacao[]>([]);

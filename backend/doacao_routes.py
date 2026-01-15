@@ -13,17 +13,14 @@ def listar_doacoes():
         return '', 204
     
     try:
-        # Filtrar apenas doaecoes ativas
         doacoes = Doacao.query.filter_by(status='ativa').all()
-        
         return jsonify({
             'success': True,
             'doacoes': [d.to_dict() for d in doacoes],
             'total': len(doacoes)
         }), 200
-        
     except Exception as e:
-        return jsonify({'error': f'Erro ao listar doaecoes: {str(e)}'}), 500
+        return jsonify({'error': f'Erro ao listar doacoes: {str(e)}'}), 500
 
 
 @doacao_bp.route('/doacoes/<int:doacao_id>', methods=['GET', 'OPTIONS'])
@@ -51,19 +48,16 @@ def criar_doacao():
         
         data = request.get_json()
         
-        # Campos obrigatorios
         required = ['nome', 'tipo', 'quantidade', 'unidade', 'validade']
         for field in required:
             if field not in data:
                 return jsonify({'error': f'{field} e obrigatorio'}), 400
         
-        # Converter string de validade para datetime
         try:
             validade = datetime.fromisoformat(data['validade'].replace('Z', '+00:00'))
         except:
             return jsonify({'error': 'Formato de data invalido. Use ISO 8601'}), 400
         
-        # Criar doacao
         doacao = Doacao(
             nome=data['nome'],
             tipo=data['tipo'],
@@ -74,7 +68,7 @@ def criar_doacao():
             imagem=data.get('imagem', ''),
             distancia=data.get('distancia', '5 km'),
             urgente=data.get('urgente', False),
-            doador_id=get_jwt_identity()
+            doador_id=int(get_jwt_identity())   # converter para inteiro
         )
         
         db.session.add(doacao)
@@ -85,7 +79,6 @@ def criar_doacao():
             'message': 'Doacao criada com sucesso',
             'doacao': doacao.to_dict()
         }), 201
-        
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Erro ao criar doacao: {str(e)}'}), 500
@@ -101,13 +94,11 @@ def atualizar_doacao(doacao_id):
         doacao = Doacao.query.get_or_404(doacao_id)
         claims = get_jwt()
         
-        # Verificar se o usuario e o dono da doacao
-        if doacao.doador_id != get_jwt_identity():
+        if doacao.doador_id != int(get_jwt_identity()):   # converter para inteiro
             return jsonify({'error': 'Acesso negado'}), 403
         
         data = request.get_json()
         
-        # Atualizar campos
         if 'nome' in data:
             doacao.nome = data['nome']
         if 'tipo' in data:
@@ -133,7 +124,6 @@ def atualizar_doacao(doacao_id):
             'message': 'Doacao atualizada',
             'doacao': doacao.to_dict()
         }), 200
-        
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Erro ao atualizar doacao: {str(e)}'}), 500
@@ -148,15 +138,13 @@ def deletar_doacao(doacao_id):
     try:
         doacao = Doacao.query.get_or_404(doacao_id)
         
-        # Verificar se o usuario e o dono da doacao
-        if doacao.doador_id != get_jwt_identity():
+        if doacao.doador_id != int(get_jwt_identity()):   #converter para inteiro
             return jsonify({'error': 'Acesso negado'}), 403
         
         db.session.delete(doacao)
         db.session.commit()
         
         return jsonify({'success': True, 'message': 'Doacao deletada'}), 200
-        
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': f'Erro ao deletar doacao: {str(e)}'}), 500
@@ -173,13 +161,12 @@ def minhas_doacoes():
         if claims.get('tipo') != 'doador':
             return jsonify({'error': 'Acesso negado'}), 403
         
-        doacoes = Doacao.query.filter_by(doador_id=get_jwt_identity()).all()
+        doacoes = Doacao.query.filter_by(doador_id=int(get_jwt_identity())).all()  #converter para inteiro
         
         return jsonify({
             'success': True,
             'doacoes': [d.to_dict() for d in doacoes],
             'total': len(doacoes)
         }), 200
-        
     except Exception as e:
-        return jsonify({'error': f'Erro ao buscar doaecoes: {str(e)}'}), 500
+        return jsonify({'error': f'Erro ao buscar doacoes: {str(e)}'}), 500

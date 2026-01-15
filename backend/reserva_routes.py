@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from extensions import db
@@ -29,7 +30,6 @@ def criar_reserva():
         if doacao.status != 'ativa':
             return jsonify({'error': 'Doacao nao esta disponivel'}), 400
         
-        # Verificar se ja existe reserva ativa para esta doacao
         reserva_existente = Reserva.query.filter_by(
             doacao_id=data['doacao_id'],
             status='ativa'
@@ -40,12 +40,11 @@ def criar_reserva():
         
         # Criar reserva
         reserva = Reserva(
-            beneficiario_id=get_jwt_identity(),
+            beneficiario_id=int(get_jwt_identity()),  # converter para inteiro
             doacao_id=data['doacao_id'],
             status='ativa'
         )
         
-        # Atualizar status da doacao
         doacao.status = 'reservada'
         
         db.session.add(reserva)
@@ -74,7 +73,7 @@ def minhas_reservas():
             return jsonify({'error': 'Acesso negado'}), 403
         
         reservas = Reserva.query.filter_by(
-            beneficiario_id=get_jwt_identity()
+            beneficiario_id=int(get_jwt_identity())  # converter para inteiro
         ).order_by(Reserva.created_at.desc()).all()
         
         return jsonify({
@@ -97,18 +96,14 @@ def cancelar_reserva(reserva_id):
         reserva = Reserva.query.get_or_404(reserva_id)
         claims = get_jwt()
         
-        # Verificar se o usuario e o dono da reserva
-        if reserva.beneficiario_id != get_jwt_identity():
+        if reserva.beneficiario_id != int(get_jwt_identity()):  # converter para inteiro
             return jsonify({'error': 'Acesso negado'}), 403
         
         if reserva.status != 'ativa':
             return jsonify({'error': 'Reserva nao pode ser cancelada'}), 400
         
-        # Cancelar reserva
         reserva.status = 'cancelada'
         reserva.data_conclusao = datetime.utcnow()
-        
-        # Liberar doacao
         reserva.doacao.status = 'ativa'
         
         db.session.commit()
@@ -133,18 +128,14 @@ def concluir_reserva(reserva_id):
         reserva = Reserva.query.get_or_404(reserva_id)
         claims = get_jwt()
         
-        # Verificar se o usuario e o dono da reserva
-        if reserva.beneficiario_id != get_jwt_identity():
+        if reserva.beneficiario_id != int(get_jwt_identity()):  # converter para inteiro
             return jsonify({'error': 'Acesso negado'}), 403
         
         if reserva.status != 'ativa':
             return jsonify({'error': 'Reserva nao pode ser concluida'}), 400
         
-        # Concluir reserva
         reserva.status = 'concluida'
         reserva.data_conclusao = datetime.utcnow()
-        
-        # Atualizar status da doacao
         reserva.doacao.status = 'entregue'
         
         db.session.commit()
@@ -169,8 +160,7 @@ def reservas_por_doacao(doacao_id):
         doacao = Doacao.query.get_or_404(doacao_id)
         claims = get_jwt()
         
-        # Verificar se o usuario e o dono da doacao
-        if doacao.doador_id != get_jwt_identity():
+        if doacao.doador_id != int(get_jwt_identity()):  # 🔑 converter para inteiro
             return jsonify({'error': 'Acesso negado'}), 403
         
         reservas = Reserva.query.filter_by(doacao_id=doacao_id).all()

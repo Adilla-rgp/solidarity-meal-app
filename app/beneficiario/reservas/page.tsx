@@ -1,6 +1,6 @@
 "use client";
 
-import Topbar from "../../components/Topbar";
+import Topbar from "@/app/components/TopBar";
 import ReservaCard from "../../components/ReservaCard";
 import { useBeneficiario } from "@/app/contexts/BeneficiarioContext";
 

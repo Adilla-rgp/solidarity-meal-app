@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from extensions import db
@@ -14,17 +15,16 @@ def get_estatisticas():
     
     try:
         claims = get_jwt()
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())  # 🔑 converter para inteiro
         tipo = claims.get('tipo')
         
         if tipo == 'doador':
-            # Estatisticas para doador
+            # Estatísticas para doador
             total_doacoes = Doacao.query.filter_by(doador_id=user_id).count()
             doacoes_ativas = Doacao.query.filter_by(doador_id=user_id, status='ativa').count()
             doacoes_reservadas = Doacao.query.filter_by(doador_id=user_id, status='reservada').count()
             doacoes_entregues = Doacao.query.filter_by(doador_id=user_id, status='entregue').count()
             
-            # Doacoes dos ultimos 30 dias
             trinta_dias_atras = datetime.utcnow() - timedelta(days=30)
             doacoes_recentes = Doacao.query.filter(
                 Doacao.doador_id == user_id,
@@ -43,7 +43,7 @@ def get_estatisticas():
             }), 200
             
         elif tipo == 'beneficiario':
-            # Estatisticas para beneficiario
+            # Estatísticas para beneficiário
             total_reservas = Reserva.query.filter_by(beneficiario_id=user_id).count()
             reservas_ativas = Reserva.query.filter_by(beneficiario_id=user_id, status='ativa').count()
             reservas_concluidas = Reserva.query.filter_by(beneficiario_id=user_id, status='concluida').count()
@@ -74,12 +74,12 @@ def grafico_mensal():
     
     try:
         claims = get_jwt()
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())  # 🔑 converter para inteiro
         
         if claims.get('tipo') != 'doador':
             return jsonify({'error': 'Acesso negado'}), 403
         
-        # Ultimos 6 meses
+        # Últimos 6 meses
         hoje = datetime.utcnow()
         dados = []
         
@@ -90,12 +90,8 @@ def grafico_mensal():
                 mes += 12
                 ano -= 1
             
-            # Contar doacoes do mes
             inicio_mes = datetime(ano, mes, 1)
-            if mes == 12:
-                fim_mes = datetime(ano + 1, 1, 1)
-            else:
-                fim_mes = datetime(ano, mes + 1, 1)
+            fim_mes = datetime(ano + 1, 1, 1) if mes == 12 else datetime(ano, mes + 1, 1)
             
             count = Doacao.query.filter(
                 Doacao.doador_id == user_id,
@@ -108,7 +104,7 @@ def grafico_mensal():
                 'quantidade': count
             })
         
-        dados.reverse()  # Do mais antigo para o mais recente
+        dados.reverse()
         
         return jsonify({
             'success': True,
