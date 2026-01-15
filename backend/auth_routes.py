@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (
     create_access_token,
@@ -22,78 +22,33 @@ def register():
         print("BACKEND DEBUG - /register INICIADO")
         print("=" * 60)
 
-        # Verificar headers
-        print("HEADERS recebidos:")
-        for key, value in request.headers.items():
-            if key.startswith('Content') or key.startswith('Accept'):
-                print(f"  {key}: {value}")
-
-        # Verificar se e JSON
-        print(f"\nContent-Type: {request.content_type}")
-        print(f"is_json: {request.is_json}")
-
         if not request.is_json:
-            print("ERRO: Request nao e JSON!")
-            print(f"Dados brutos: {request.data}")
+            print("ERRO: Request não é JSON!")
             return jsonify({'error': 'Content-Type deve ser application/json'}), 400
 
-        # Tentar parsear JSON
         data = request.get_json(silent=True)
 
-        print("\nDADOS RECEBIDOS:")
         if data is None:
-            print("Dados sao None (JSON invalido)")
-            print(f"Raw data: {request.data}")
-            try:
-                raw_text = request.data.decode('utf-8') if request.data else 'vazio'
-                print(f"Texto bruto: {raw_text}")
-            except:
-                print("Nao conseguiu decodificar dados")
-            return jsonify({'error': 'JSON invalido'}), 400
+            print("ERRO: JSON inválido")
+            return jsonify({'error': 'JSON inválido'}), 400
 
-        print(f"Tipo: {type(data)}")
-        print(f"Conteudo: {data}")
+        print(f"Dados recebidos: {data}")
 
-        if data:
-            print(f"Campos: {list(data.keys())}")
-            print("\nVALORES DOS CAMPOS:")
-            for key, value in data.items():
-                print(f"  {key}: '{value}' (tipo: {type(value).__name__})")
-        else:
-            print("Dados vazios (dict vazio)")
-
-        print("\n" + "=" * 60)
-
-        # Validar campos obrigatorios
+        # Validar campos obrigatórios
         required_fields = ['email', 'senha', 'tipo', 'nome']
-        print("VALIDACAO DE CAMPOS OBRIGATORIOS:")
-
-        campos_faltando = []
-        for field in required_fields:
-            if field not in data:
-                campos_faltando.append(field)
-                print(f" {field}: FALTANDO")
-            else:
-                valor = data[field]
-                if not valor or (isinstance(valor, str) and valor.strip() == ''):
-                    print(f"{field}: PRESENTE mas vazio ('{valor}')")
-                else:
-                    print(f"{field}: OK ('{valor}')")
+        campos_faltando = [f for f in required_fields if f not in data or not data[f]]
 
         if campos_faltando:
-            print(f"\nCAMPOS FALTANDO: {campos_faltando}")
-            return jsonify({'error': f'Campos obrigatorios faltando: {", ".join(campos_faltando)}'}), 400
+            print(f"Campos faltando: {campos_faltando}")
+            return jsonify({'error': f'Campos obrigatórios faltando: {", ".join(campos_faltando)}'}), 400
 
-        print("\nTODOS OS CAMPOS OBRIGATORIOS PRESENTES")
-
-        # Verificar se email ja existe
+        # Verificar se email já existe
         email = data['email']
         if User.query.filter_by(email=email).first():
-            print(f" Email '{email}' ja cadastrado")
-            return jsonify({'error': 'Email ja cadastrado'}), 409
-        print(f"Email '{email}' disponivel")
+            print(f"Email '{email}' já cadastrado")
+            return jsonify({'error': 'Email já cadastrado'}), 409
 
-        # Criar usuario
+        # Criar usuário
         user = User(
             email=data['email'],
             nome=data['nome'],
@@ -101,35 +56,29 @@ def register():
         )
         user.set_password(data['senha'])
 
-        # Campos especificos por tipo
+        # Campos específicos por tipo
         tipo = data['tipo']
-        print(f"\nTIPO DE USUARIO: {tipo}")
+        print(f"Tipo de usuário: {tipo}")
 
         if tipo == 'doador':
             user.estabelecimento = data.get('estabelecimento', '')
             user.localizacao = data.get('localizacao', '')
             user.telefone = data.get('telefone', '')
-            print(f"  Estabelecimento: '{user.estabelecimento}'")
-            print(f"  Localizacao: '{user.localizacao}'")
-            print(f"  Telefone: '{user.telefone}'")
         elif tipo == 'beneficiario':
             user.endereco = data.get('endereco', '')
             user.necessidade = data.get('necessidade', '')
             user.telefone = data.get('telefone', '')
-            print(f"  Endereco: '{user.endereco}'")
-            print(f"  Necessidade: '{user.necessidade}'")
-            print(f"  Telefone: '{user.telefone}'")
-        else:
-            print(f" Tipo invalido: {tipo}")
+
         db.session.add(user)
         db.session.commit()
 
-        print(f"Usuario criado com ID: {user.id}")
-        # Gerar token
+        print(f"Usuário criado com ID: {user.id}")
+
+        # Gerar token com tipo incluído
         access_token = create_access_token(
             identity=user.id,
             additional_claims={
-                'tipo': user.tipo,
+                'tipo': user.tipo,  # CRÍTICO: incluir tipo no token
                 'email': user.email,
                 'nome': user.nome,
                 'id': user.id
@@ -137,12 +86,8 @@ def register():
         )
 
         user_dict = user.to_dict()
-        print(f"Token gerado: {access_token[:50]}...")
-        print(f"Dados do usuario: {user_dict}")
-
-        print("\n" + "=" * 60)
-        print("/register FINALIZADO COM SUCESSO")
-        print("=" * 60 + "\n")
+        print(f"Token gerado com tipo: {user.tipo}")
+        print(f"User dict: {user_dict}")
 
         return jsonify({
             'success': True,
@@ -151,7 +96,7 @@ def register():
         }), 201
 
     except Exception as e:
-        print(f"\nEXCECAO EM /register: {str(e)}")
+        print(f"EXCEÇÃO EM /register: {str(e)}")
         import traceback
         traceback.print_exc()
         db.session.rollback()
@@ -168,18 +113,13 @@ def login():
         print("BACKEND DEBUG - /login INICIADO")
 
         if not request.is_json:
-            print(" Request nao e JSON")
             return jsonify({'error': 'Content-Type deve ser application/json'}), 400
 
         data = request.get_json()
-
         print(f"Dados recebidos: {data}")
-        if data:
-            print(f"Campos: {list(data.keys())}")
 
         if not data or 'email' not in data or 'senha' not in data:
-            print(" Campos email ou senha faltando")
-            return jsonify({'error': 'Email e senha sao obrigatorios'}), 400
+            return jsonify({'error': 'Email e senha são obrigatórios'}), 400
 
         email = data['email']
         senha = data['senha']
@@ -187,41 +127,44 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if not user:
-            print(f"Usuario com email '{email}' nao encontrado")
-            return jsonify({'error': 'Credenciais invalidas'}), 401
+            print(f"Usuário com email '{email}' não encontrado")
+            return jsonify({'error': 'Credenciais inválidas'}), 401
 
         if not user.check_password(senha):
-            print(f"Senha incorreta para usuario '{email}'")
-            return jsonify({'error': 'Credenciais invalidas'}), 401
+            print(f"Senha incorreta para usuário '{email}'")
+            return jsonify({'error': 'Credenciais inválidas'}), 401
 
         if not user.is_active:
-            print(f"Usuario '{email}' desativado")
+            print(f"Usuário '{email}' desativado")
             return jsonify({'error': 'Conta desativada'}), 403
 
-        print(f"Login bem-sucedido para '{email}'")
+        print(f"Login bem-sucedido para '{email}' (tipo: {user.tipo})")
 
-        # Gerar token
+        # Gerar token com tipo incluído
         access_token = create_access_token(
             identity=user.id,
             additional_claims={
-                'tipo': user.tipo,
+                'tipo': user.tipo,  # CRÍTICO: incluir tipo no token
                 'email': user.email,
                 'nome': user.nome,
                 'id': user.id
             }
         )
 
-        print(f"Token gerado: {access_token[:50]}...")
-        print("=" * 60 + "\n")
+        user_dict = user.to_dict()
+        
+        print(f"Token gerado com tipo: {user.tipo}")
+        print(f"Retornando user: {user_dict}")
+        print("=" * 60)
 
         return jsonify({
             'success': True,
             'access_token': access_token,
-            'user': user.to_dict()
+            'user': user_dict
         }), 200
 
     except Exception as e:
-        print(f"EXCECAO EM /login: {str(e)}")
+        print(f"EXCEÇÃO EM /login: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Erro ao fazer login: {str(e)}'}), 500
@@ -238,7 +181,10 @@ def get_current_user():
         user = User.query.get(user_id)
 
         if not user:
-            return jsonify({'error': 'Usuario nao encontrado'}), 404
+            return jsonify({'error': 'Usuário não encontrado'}), 404
+
+        if not user.is_active:
+            return jsonify({'error': 'Conta desativada'}), 403
 
         return jsonify({
             'success': True,
@@ -246,7 +192,7 @@ def get_current_user():
         }), 200
 
     except Exception as e:
-        return jsonify({'error': f'Erro ao buscar usuario: {str(e)}'}), 500
+        return jsonify({'error': f'Erro ao buscar usuário: {str(e)}'}), 500
 
 
 @auth_bp.route('/logout', methods=['POST', 'OPTIONS'])
