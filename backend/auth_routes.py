@@ -58,7 +58,7 @@ def register():
 
         # Gerar token com tipo incluído
         access_token = create_access_token(
-            identity=str(user.id),   # 🔑 sempre string
+            identity=str(user.id),   # sempre string
             additional_claims={
                 'tipo': user.tipo,
                 'email': user.email,

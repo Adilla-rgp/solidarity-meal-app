@@ -15,7 +15,7 @@ def get_estatisticas():
     
     try:
         claims = get_jwt()
-        user_id = int(get_jwt_identity())  # 🔑 converter para inteiro
+        user_id = int(get_jwt_identity())  # converter para inteiro
         tipo = claims.get('tipo')
         
         if tipo == 'doador':
@@ -74,7 +74,7 @@ def grafico_mensal():
     
     try:
         claims = get_jwt()
-        user_id = int(get_jwt_identity())  # 🔑 converter para inteiro
+        user_id = int(get_jwt_identity())  # converter para inteiro
         
         if claims.get('tipo') != 'doador':
             return jsonify({'error': 'Acesso negado'}), 403
