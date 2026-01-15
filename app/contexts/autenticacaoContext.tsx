@@ -7,6 +7,7 @@ import { authService } from "@/app/lib/api/auth.service";
 type TipoUsuario = "doador" | "beneficiario";
 
 interface AuthData {
+  logado: boolean;
   email: string;
   tipo: TipoUsuario;
   nome?: string;
@@ -40,8 +41,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (authService.isAuthenticated()) {
         try {
           const user = await authService.me();
-          if (user) {
+          if (user && user.tipo) {
+            console.log("Usuário carregado:", user);
             setAuth({
+              logado: true,
               email: user.email,
               tipo: user.tipo,
               nome: user.nome,
@@ -53,11 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               necessidade: user.necessidade
             });
           } else {
-            // Token inválido, fazer logout
+            console.log("Token inválido ou sem tipo, fazendo logout");
             await authService.logout();
+            setAuth(null);
           }
         } catch (error) {
           console.error('Erro ao carregar usuário:', error);
+          await authService.logout();
+          setAuth(null);
         }
       }
       setInitializing(false);
@@ -67,22 +73,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, senha: string): Promise<boolean> {
-    if (!email || !senha) return false;
+    if (!email || !senha) {
+      console.log("Email ou senha vazios");
+      return false;
+    }
 
     setLoading(true);
     
     try {
+      console.log("Tentando login...", { email });
       const result = await authService.login({ email, senha });
       
-      if (!result.success || !result.user || !result.user.tipo) {
-        console.error('Login falhou:', result.error || 'Usuário ou tipo não encontrado');
+      console.log("Resultado do login:", result);
+      
+      if (!result.success || !result.user) {
+        console.error('Login falhou:', result.error || 'Usuário não encontrado');
+        setLoading(false);
         return false;
       }
 
-      // Agora temos certeza que result.user.tipo existe
+      // CRÍTICO: Verificar se o tipo existe
+      if (!result.user.tipo) {
+        console.error('Usuário sem tipo', result.user);
+        setLoading(false);
+        return false;
+      }
+
       const user = result.user;
       
+      console.log("Login bem-sucedido:");
+      console.log("   Tipo:", user.tipo);
+      console.log("   Email:", user.email);
+      console.log("   Nome:", user.nome);
+      
       setAuth({
+        logado: true,
         email: user.email,
         tipo: user.tipo,
         nome: user.nome,
@@ -94,27 +119,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         necessidade: user.necessidade
       });
       
-      // Redireciona baseado no tipo retornado pelo backend
-      if (typeof window !== 'undefined') {
-        setTimeout(() => {
-          router.push(
-            user.tipo === "doador"
-              ? "/doador/dashboard"
-              : "/beneficiario/doacoes"
-          );
-        }, 100);
-      }
+      // Redireciona baseado no tipo
+      const redirectPath = user.tipo === "doador"
+        ? "/doador/dashboard"
+        : "/beneficiario/doacoes";
       
+      console.log("redirecionando para:", redirectPath);
+      
+      // Usar setTimeout para garantir que o estado foi atualizado
+      setTimeout(() => {
+        router.push(redirectPath);
+      }, 100);
+      
+      setLoading(false);
       return true;
     } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    } finally {
+      console.error('Erro no login:', error);
       setLoading(false);
+      return false;
     }
   }
 
   async function logout(): Promise<void> {
+    console.log("Fazendo logout...");
     await authService.logout();
     setAuth(null);
     router.push("/login");
