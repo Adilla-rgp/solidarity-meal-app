@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 from extensions import db, bcrypt
 from datetime import datetime, timedelta
 import re
@@ -11,15 +11,18 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     senha = db.Column(db.String(255), nullable=False)
     telefone = db.Column(db.String(20))
-    tipo = db.Column(db.String(20), nullable=False)  # 'doador' ou 'beneficiario'
+    tipo = db.Column(db.String(20), nullable=False)  
     
-    # Campos especificos para doador
+    # Campos específicos para doador
     estabelecimento = db.Column(db.String(120))
     localizacao = db.Column(db.Text)
     
-    # Campos especificos para beneficiario
+    # Campos específicos para beneficiario
     endereco = db.Column(db.Text)
     necessidade = db.Column(db.Text)
+
+
+
     
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -35,25 +38,24 @@ class User(db.Model):
         return bcrypt.check_password_hash(self.senha, password)
     
     def to_dict(self):
+        """Retorna dicionário com TODOS os campos, incluindo tipo"""
         base = {
             'id': self.id,
             'nome': self.nome,
             'email': self.email,
             'telefone': self.telefone,
-            'tipo': self.tipo,
+            'tipo': self.tipo, 
+            'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
         
+        # Adicionar campos específicos do tipo
         if self.tipo == 'doador':
-            base.update({
-                'estabelecimento': self.estabelecimento,
-                'localizacao': self.localizacao
-            })
+            base['estabelecimento'] = self.estabelecimento
+            base['localizacao'] = self.localizacao
         elif self.tipo == 'beneficiario':
-            base.update({
-                'endereco': self.endereco,
-                'necessidade': self.necessidade
-            })
+            base['endereco'] = self.endereco
+            base['necessidade'] = self.necessidade
         
         return base
 
@@ -63,14 +65,14 @@ class Doacao(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(200), nullable=False)
-    tipo = db.Column(db.String(50), nullable=False)  # alimento, roupa, etc
+    tipo = db.Column(db.String(50), nullable=False)  
     quantidade = db.Column(db.Float, nullable=False)
-    unidade = db.Column(db.String(20), nullable=False)  # kg, unidade, litro
+    unidade = db.Column(db.String(20), nullable=False) 
     validade = db.Column(db.DateTime, nullable=False)
     descricao = db.Column(db.Text)
-    imagem = db.Column(db.Text)  # URL ou base64
-    status = db.Column(db.String(20), default='ativa')  # ativa, reservada, entregue
-    distancia = db.Column(db.String(50))  # apenas para frontend
+    imagem = db.Column(db.Text)
+    status = db.Column(db.String(20), default='ativa')  
+    distancia = db.Column(db.String(50))  
     urgente = db.Column(db.Boolean, default=False)
     
     doador_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -104,7 +106,7 @@ class Reserva(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     beneficiario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     doacao_id = db.Column(db.Integer, db.ForeignKey('doacoes.id'), nullable=False)
-    status = db.Column(db.String(20), default='ativa')  # ativa, cancelada, concluida
+    status = db.Column(db.String(20), default='ativa')  
     data_reserva = db.Column(db.DateTime, default=datetime.utcnow)
     data_conclusao = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
